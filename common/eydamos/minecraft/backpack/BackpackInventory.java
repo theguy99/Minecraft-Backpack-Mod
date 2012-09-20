@@ -4,6 +4,7 @@ import com.google.common.collect.ContiguousSet;
 
 import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.IInventory;
+import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.NBTTagList;
@@ -13,24 +14,13 @@ public class BackpackInventory implements IInventory {
 	private static final int slotsCount = 27;
 	private ItemStack inventoryContents[];
 	private String inventoryTitle = "Backpack";
-	private NBTTagCompound invTag;
+	private NBTTagCompound itemStackTag;
 
-	private int number;
-	private int color;
 	private boolean magic;
 	EntityPlayer currentUser;
 
 	public BackpackInventory(NBTTagCompound itemStackTag) {
-		invTag = itemStackTag;
-		inventoryContents = new ItemStack[slotsCount];
-	}
-
-	public BackpackInventory(int num, int col) {
-		number = num;
-		color = col;
-		if(num == 31999) {
-			setMagic();
-		}
+		this.itemStackTag = itemStackTag;
 		inventoryContents = new ItemStack[slotsCount];
 	}
 
@@ -53,14 +43,12 @@ public class BackpackInventory implements IInventory {
 			if(inventoryContents[position].stackSize <= decrease) {
 				ItemStack itemstack = inventoryContents[position];
 				inventoryContents[position] = null;
-				onInventoryChanged();
 				return itemstack;
 			}
 			ItemStack itemstack1 = inventoryContents[position].splitStack(decrease);
 			if(inventoryContents[position].stackSize == 0) {
 				inventoryContents[position] = null;
 			}
-			onInventoryChanged();
 			return itemstack1;
 		}
 		return null;
@@ -82,7 +70,6 @@ public class BackpackInventory implements IInventory {
 		if(itemstack != null && itemstack.stackSize > getInventoryStackLimit()) {
 			itemstack.stackSize = getInventoryStackLimit();
 		}
-		onInventoryChanged();
 	}
 
 	@Override
@@ -97,6 +84,7 @@ public class BackpackInventory implements IInventory {
 
 	@Override
 	public void onInventoryChanged() {
+		System.out.println("oninventory chanded");
 		saveInventory();
 	}
 
@@ -107,126 +95,71 @@ public class BackpackInventory implements IInventory {
 
 	@Override
 	public void openChest() {
-		if(backpackExists(number)) {
-			System.out.println("Backpack exists");
-		} else {
-			System.out.println("Backpack doesn't exists fuuuuuuuuuuuuuuuuuuuuu");
-		}
-		readFromTag(getTag());
+		loadInventory();
 	}
 
 	@Override
 	public void closeChest() {
-		dropContainedBackpacks();
-		saveInventory();
+		//dropContainedBackpacks();
+		//saveInventory();
 	}
 
-	// ***************custom methods which are not in
-	// IInventory*****************
+	// ***** custom methods which are not in IInventory *****
 	/**
-	 * loads the content of the inventory from the NBT
+	 * loads the content of the inventory from the NBT.
 	 */
-	public void loadInventoryContent(int uid) {
-		if(!backpackExists(uid)){
-		    System.out.println("backpack does not exist!");
-		    createUniqueInventory(0);
+	public void setInvName(String name) {
+		System.out.println("new name is " + name);
+		inventoryTitle = name;
+	}
+	
+	public void loadInventory() {
+		if(!hasInventory()) {
+			System.out.println("backpack does not exist!");
+			createInventory(null);
 		}
 
-		readFromTag(getBackpackTag(uid));
+		readFromTag(itemStackTag.getCompoundTag("Inventory"));
 	}
 
 	/**
-	 * saves the actual content of the inventory to the NBT
+	 * Saves the actual content of the inventory to the NBT.
 	 */
 	public void saveInventory() {
-		System.out.println("saveInventory for uid " + number);
-		if(backpackExists(number)) {
-			System.out.println("Backpack exists");
+		writeToTag(itemStackTag.getCompoundTag("Inventory"));
+	}
+
+	/**
+	 * Creates the Inventory Tag in the NBT with an empty inventory.
+	 */
+	public void createInventory(String name) {
+		if(name == null) {
+			setInvName("Backpack");
 		} else {
-			System.out.println("Backpack doesn't exists fuuuuuuuuuuuuuuuuuuuuu");
+			setInvName(name);
 		}
-		writeToTag(getBackpackTag(number));
-	}
-	
-	public void createUniqueInventory(int color) {
-		int uid = getFirstFreeSlot();
-		invTag.setCompoundTag(getBackpackIdentifier(uid),
-				(new BackpackInventory(uid, color)).writeToTag(new NBTTagCompound()));
-		System.out.println("Creating new backpack with id " + uid);
+		itemStackTag.setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
 	}
 
 	/**
-	 * Creates an unique inventory for a backpack with a specific color.
-	 * 
-	 * @param name
-	 * @param color
-	 * @return
-	 */
-	public int createUniqueInventory(String name, int color) {
-		int uid = getFirstFreeSlot();
-		System.out.println("Creating new backpack with id " + uid);
-		invTag.setCompoundTag(getBackpackIdentifier(uid),
-				(new BackpackInventory(uid, color)).setInvName(name).writeToTag(new NBTTagCompound()));
-		return uid;
-	}
-
-	/**
-	 * Returns the first free UID between 16 and 32000.
+	 * Returns if an Inventory is saved in the NBT.
 	 * 
 	 * @return
 	 */
-	public int getFirstFreeSlot() {
-		for(int cnt = 16; cnt < 32000; cnt++) {
-			if(!backpackExists(cnt))
-				return cnt;
-		}
-		return 31998;
+	public boolean hasInventory() {
+		return itemStackTag.hasKey("Inventory");
 	}
 
 	/**
-	 * Checks if a Backpack with a specific uid exists in the NBT.
-	 * 
-	 * @param uid
-	 * @return
+	 * Sets magic to true to identify a magic backpack.
 	 */
-	public boolean backpackExists(int uid) {
-		return invTag.hasKey(getBackpackIdentifier(uid));
-	}
-
-	/**
-	 * Creates an unique string based on the uid.
-	 * 
-	 * @param uid
-	 * @return
-	 */
-	public static String getBackpackIdentifier(int uid) {
-		System.out.println("get Backpack Identifier: " + "Backpack" + uid + "inv");
-		return "Backpack" + uid + "inv";
-	}
-	
-	/**
-	 * Reads the InventoryData from the NBT for the specific uid.
-	 * @param uid
-	 * @return
-	 */
-	public NBTTagCompound getBackpackTag(int uid) {
-		return invTag.getCompoundTag(getBackpackIdentifier(uid));
-	}
-
-	public BackpackInventory setMagic() {
+	public void setMagic() {
 		magic = true;
-		return this;
-	}
-
-	public NBTTagCompound getTag() {
-		if(magic) {
-			return BackpackUtils.getMagicBackpackTag(currentUser);
-		}
-		return getBackpackTag(number);
 	}
 
 	/**
 	 * Drops Backpacks on the ground which are in this backpack
+	 * 
 	 * @return
 	 */
 	public void dropContainedBackpacks() {
@@ -240,21 +173,10 @@ public class BackpackInventory implements IInventory {
 	}
 
 	/**
-	 * Sets the title
-	 * @param name
-	 * @return
-	 */
-	public BackpackInventory setInvName(String name) {
-		inventoryTitle = name;
-		System.out.println("set inventoryTitle to " + name);
-		return this;
-	}
-
-	/**
-	 * Writes a NBT Node with number, color, title and inventory.
+	 * Writes a NBT Node with inventory.
 	 * 
 	 * @param outerTag
-	 *            A clean NBT Node.
+	 *            The NBT Node to write to.
 	 * @return The written NBT Node.
 	 */
 	public NBTTagCompound writeToTag(NBTTagCompound outerTag) {
@@ -262,14 +184,12 @@ public class BackpackInventory implements IInventory {
 			return null;
 		}
 		
-		System.out.println("writeToTag");
-
-		outerTag.setInteger("number", number);
-		outerTag.setInteger("color", color);
-		outerTag.setBoolean("magic", magic);
+		boolean init = false;
+		if(!outerTag.hasKey("title")) {
+			init = true;
+		}
 		outerTag.setString("title", getInvName());
-		
-		System.out.println("Number: " + number + " Color: " + color + " Magic: " + magic + " Name: " + getInvName());
+		System.out.println("title written is " + getInvName());
 
 		NBTTagList itemList = new NBTTagList();
 		for(int i = 0; i < inventoryContents.length; i++) {
@@ -281,29 +201,30 @@ public class BackpackInventory implements IInventory {
 				System.out.println(inventoryContents[i].itemID + " at slot " + i);
 			}
 		}
+		if(init) {
+			NBTTagCompound slotEntry = new NBTTagCompound();
+			slotEntry.setByte("Slot", (byte) 1);
+			(new ItemStack(Item.leather)).writeToNBT(slotEntry);
+			itemList.appendTag(slotEntry);
+		}
 
 		outerTag.setTag("Items", itemList);
 		return outerTag;
 	}
 
 	/**
-	 * Reads the number, color, title and content from a NBT.
+	 * Reads the inventory from a NBT Node.
+	 * 
 	 * @param outerTag
-	 * @return
+	 *            The NBT Node to read from.
 	 */
-	public BackpackInventory readFromTag(NBTTagCompound outerTag) {
+	public void readFromTag(NBTTagCompound outerTag) {
 		if(outerTag == null) {
-			return this;
+			return;
 		}
 		
-		System.out.println("readFromTag");
-		
-		number = outerTag.getInteger("number");
-		color = outerTag.getInteger("color");
-		magic = outerTag.getBoolean("magic");
 		setInvName(outerTag.getString("title"));
-
-		System.out.println("Number: " + number + " Color: " + color + " Magic: " + magic);
+		System.out.println("titel read is " + outerTag.getString("title"));
 
 		NBTTagList itemList = outerTag.getTagList("Items");
 		inventoryContents = new ItemStack[getSizeInventory()];
@@ -314,28 +235,7 @@ public class BackpackInventory implements IInventory {
 			if(j >= 0 && j < getSizeInventory()) {
 				inventoryContents[j] = ItemStack.loadItemStackFromNBT(slotEntry);
 			}
-			System.out.println(inventoryContents[i].itemID + " now at slot " + i);
+			System.out.println(inventoryContents[j].itemID + " now at slot " + j);
 		}
-		return this;
 	}
-
-	/*public int getColorFromTag(NBTTagCompound outerTag) {
-		if(outerTag == null) {
-			return 0;
-		}
-		return outerTag.getInteger("color");
-	}
-
-	public String getNameFromTag(NBTTagCompound outerTag) {
-		if(outerTag == null) {
-			return "";
-		}
-		return outerTag.getString("title");
-	}
-
-	public BackpackInventory setPlayer(EntityPlayer player) {
-		currentUser = player;
-		return this;
-	}*/
-
 }

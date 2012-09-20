@@ -1,16 +1,12 @@
 package eydamos.minecraft.backpack;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import net.minecraft.src.CreativeTabs;
 import net.minecraft.src.EntityPlayer;
-import net.minecraft.src.IInventory;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
-import net.minecraft.src.StringTranslate;
 import net.minecraft.src.World;
 
 public class BackpackItem extends Item {
@@ -91,18 +87,15 @@ public class BackpackItem extends Item {
 		}
 		BackpackInventory inv = new BackpackInventory(is.getTagCompound());
 
-		// creates an unique inventory for the backpack and sets the damage to
-		// the uid
-		if(is.getItemDamage() < 16) {
-			String translatedName = StringTranslate.getInstance().translateNamedKey(getItemNameIS(is));
-			int color = getColorFromDamage(is.getItemDamage(), 0);
-			int uid = inv.createUniqueInventory(translatedName, color);
-			is.setItemDamage(uid);
+		if(!inv.hasInventory()) {
+			System.out.println("Create inventory");
+			inv.createInventory(getItemNameIS(is));
 		}
 
-		inv.loadInventoryContent(is.getItemDamage());
+		inv.loadInventory();
 
 		player.displayGUIChest(inv);
+		
 		return is;
 	}
 
@@ -117,13 +110,8 @@ public class BackpackItem extends Item {
 		}
 		BackpackInventory inv = new BackpackInventory(is.getTagCompound());
 
-		// creates an unique inventory for the backpack and sets the damage to 
-		// the uid
-		if(is.getItemDamage() < 16) {
-			String translatedName = StringTranslate.getInstance().translateNamedKey(getItemNameIS(is));
-			int color = getColorFromDamage(is.getItemDamage(), 0);
-			int uid = inv.createUniqueInventory(translatedName, color);
-			is.setItemDamage(uid);
+		if(!inv.hasInventory()) {
+			inv.createInventory(getItemNameIS(is));
 		}
 	}
 
