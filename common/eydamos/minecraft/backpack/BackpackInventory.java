@@ -13,14 +13,15 @@ import net.minecraft.src.TileEntity;
 public class BackpackInventory implements IInventory {
 	private static final int slotsCount = 27;
 	private ItemStack inventoryContents[];
-	private String inventoryTitle = "Backpack";
-	private NBTTagCompound itemStackTag;
 
 	private boolean magic;
-	EntityPlayer currentUser;
+	private String inventoryTitle = "Backpack";
+	
+	private EntityPlayer playerEntity;
 
-	public BackpackInventory(NBTTagCompound itemStackTag) {
-		this.itemStackTag = itemStackTag;
+	public BackpackInventory(EntityPlayer player, ItemStack is) {
+		playerEntity = player;
+		setMagic(is.getItemDamage());
 		inventoryContents = new ItemStack[slotsCount];
 	}
 
@@ -84,7 +85,6 @@ public class BackpackInventory implements IInventory {
 
 	@Override
 	public void onInventoryChanged() {
-		System.out.println("oninventory chanded");
 		saveInventory();
 	}
 
@@ -100,33 +100,45 @@ public class BackpackInventory implements IInventory {
 
 	@Override
 	public void closeChest() {
-		//dropContainedBackpacks();
-		//saveInventory();
+		dropContainedBackpacks();
+		saveInventory();
 	}
 
 	// ***** custom methods which are not in IInventory *****
+	public NBTTagCompound getNBT() {
+		NBTTagCompound nbt = null;
+		if(magic) {
+			nbt = playerEntity.getEntityData();
+		} else {
+			if(playerEntity.getCurrentEquippedItem().getTagCompound() == null) {
+				playerEntity.getCurrentEquippedItem().setTagCompound(new NBTTagCompound());	
+			}
+			nbt = playerEntity.getCurrentEquippedItem().getTagCompound();
+		}
+		
+		return nbt;
+	}
+	
 	/**
 	 * loads the content of the inventory from the NBT.
 	 */
 	public void setInvName(String name) {
-		System.out.println("new name is " + name);
 		inventoryTitle = name;
 	}
 	
 	public void loadInventory() {
 		if(!hasInventory()) {
-			System.out.println("backpack does not exist!");
 			createInventory(null);
 		}
 
-		readFromTag(itemStackTag.getCompoundTag("Inventory"));
+		readFromTag(getNBT().getCompoundTag("Inventory"));
 	}
 
 	/**
 	 * Saves the actual content of the inventory to the NBT.
 	 */
 	public void saveInventory() {
-		writeToTag(itemStackTag.getCompoundTag("Inventory"));
+		writeToTag(getNBT().getCompoundTag("Inventory"));
 	}
 
 	/**
@@ -138,7 +150,7 @@ public class BackpackInventory implements IInventory {
 		} else {
 			setInvName(name);
 		}
-		itemStackTag.setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
+		getNBT().setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
 	}
 
 	/**
@@ -147,14 +159,14 @@ public class BackpackInventory implements IInventory {
 	 * @return
 	 */
 	public boolean hasInventory() {
-		return itemStackTag.hasKey("Inventory");
+		return getNBT().hasKey("Inventory");
 	}
 
 	/**
-	 * Sets magic to true to identify a magic backpack.
+	 * Sets magic to true or false based on the item damage to identify a magic backpack.
 	 */
-	public void setMagic() {
-		magic = true;
+	public void setMagic(int itemDamage) {
+		magic = (itemDamage == BackpackItem.MAGICBACKPACK);
 	}
 
 	/**
@@ -166,7 +178,7 @@ public class BackpackInventory implements IInventory {
 		for(int i = 0; i < getSizeInventory(); i++) {
 			if(getStackInSlot(i) != null
 					&& getStackInSlot(i).itemID == Backpack.backpackItem.shiftedIndex) {
-				currentUser.dropPlayerItem(getStackInSlot(i).copy());
+				playerEntity.dropPlayerItem(getStackInSlot(i).copy());
 				setInventorySlotContents(i, null);
 			}
 		}
@@ -184,12 +196,7 @@ public class BackpackInventory implements IInventory {
 			return null;
 		}
 		
-		boolean init = false;
-		if(!outerTag.hasKey("title")) {
-			init = true;
-		}
 		outerTag.setString("title", getInvName());
-		System.out.println("title written is " + getInvName());
 
 		NBTTagList itemList = new NBTTagList();
 		for(int i = 0; i < inventoryContents.length; i++) {
@@ -198,14 +205,7 @@ public class BackpackInventory implements IInventory {
 				slotEntry.setByte("Slot", (byte) i);
 				inventoryContents[i].writeToNBT(slotEntry);
 				itemList.appendTag(slotEntry);
-				System.out.println(inventoryContents[i].itemID + " at slot " + i);
 			}
-		}
-		if(init) {
-			NBTTagCompound slotEntry = new NBTTagCompound();
-			slotEntry.setByte("Slot", (byte) 1);
-			(new ItemStack(Item.leather)).writeToNBT(slotEntry);
-			itemList.appendTag(slotEntry);
 		}
 
 		outerTag.setTag("Items", itemList);
@@ -224,7 +224,6 @@ public class BackpackInventory implements IInventory {
 		}
 		
 		setInvName(outerTag.getString("title"));
-		System.out.println("titel read is " + outerTag.getString("title"));
 
 		NBTTagList itemList = outerTag.getTagList("Items");
 		inventoryContents = new ItemStack[getSizeInventory()];
@@ -235,7 +234,6 @@ public class BackpackInventory implements IInventory {
 			if(j >= 0 && j < getSizeInventory()) {
 				inventoryContents[j] = ItemStack.loadItemStackFromNBT(slotEntry);
 			}
-			System.out.println(inventoryContents[j].itemID + " now at slot " + j);
 		}
 	}
 }

@@ -2,11 +2,17 @@ package eydamos.minecraft.backpack;
 
 import java.util.List;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+
+import net.minecraft.src.Container;
 import net.minecraft.src.CreativeTabs;
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.EntityPlayerSP;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
+import net.minecraft.src.ModLoader;
 import net.minecraft.src.NBTTagCompound;
+import net.minecraft.src.StringTranslate;
 import net.minecraft.src.World;
 
 public class BackpackItem extends Item {
@@ -32,7 +38,7 @@ public class BackpackItem extends Item {
 		setMaxStackSize(1);
 		setTabToDisplayOn(CreativeTabs.tabMisc);
 		setIconIndex(0);
-		setItemName("backpackItem");
+		setItemName("backpack");
 		setHasSubtypes(true);
 	}
 
@@ -61,8 +67,13 @@ public class BackpackItem extends Item {
 
 	@Override
 	public String getItemNameIS(ItemStack itemstack) {
+		if(itemstack.getTagCompound() != null) {
+			if(itemstack.getTagCompound().hasKey("Inventory")) {
+				return itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
+			}
+		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			return backpackNames[itemstack.getItemDamage()];
+			return StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
 		}
 		if(itemstack.getItemDamage() == MAGICBACKPACK) {
 			return backpackNames[16];
@@ -80,15 +91,19 @@ public class BackpackItem extends Item {
 		if(world.isRemote) {
 			return is;
 		}
+		
+		if(player.isSneaking()){
+		    BackpackGui gb = new BackpackGui(player);
+		    FMLCommonHandler.instance().showGuiScreen(gb);
+		    return is;
+		}
 
 		if(is.getTagCompound() == null) {
-			System.out.println("Creating new NBT for ItemStack");
 			is.setTagCompound(new NBTTagCompound());
 		}
-		BackpackInventory inv = new BackpackInventory(is.getTagCompound());
+		BackpackInventory inv = new BackpackInventory(player, is);
 
 		if(!inv.hasInventory()) {
-			System.out.println("Create inventory");
 			inv.createInventory(getItemNameIS(is));
 		}
 
@@ -98,21 +113,21 @@ public class BackpackItem extends Item {
 		
 		return is;
 	}
-
-	public void onCreated(ItemStack is, World world, EntityPlayer entityplayer) {
-		if(world.isRemote) {
-			return;
+	
+	@Override
+	public String getItemDisplayName(ItemStack itemstack) {
+		if(itemstack.getTagCompound() != null) {
+			if(itemstack.getTagCompound().hasKey("Inventory")) {
+				return itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
+			}
 		}
-		
-		if(is.getTagCompound() == null) {
-			System.out.println("Creating new NBT for ItemStack in onCreated");
-			is.setTagCompound(new NBTTagCompound());
+		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
+			return StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
 		}
-		BackpackInventory inv = new BackpackInventory(is.getTagCompound());
-
-		if(!inv.hasInventory()) {
-			inv.createInventory(getItemNameIS(is));
+		if(itemstack.getItemDamage() == MAGICBACKPACK) {
+			return backpackNames[16];
 		}
+		return backpackNames[0];
 	}
 
 }

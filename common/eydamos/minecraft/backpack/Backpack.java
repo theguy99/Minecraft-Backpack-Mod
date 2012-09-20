@@ -1,6 +1,5 @@
 package eydamos.minecraft.backpack;
 
-import net.minecraft.src.Block;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import cpw.mods.fml.common.Mod;
@@ -13,6 +12,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkMod;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
@@ -59,6 +59,9 @@ public class Backpack {
 		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
 				'L', leatherStack, 'D', colorStack);
 		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[16]);
+		
+		// register GuiHandler for backpack name change
+		NetworkRegistry.instance().registerGuiHandler(this, new BackpackGuiHandler());
 	}
 	
 	@PostInit
