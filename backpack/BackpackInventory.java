@@ -1,4 +1,4 @@
-package eydamos.minecraft.backpack;
+package backpack;
 
 import com.google.common.collect.ContiguousSet;
 

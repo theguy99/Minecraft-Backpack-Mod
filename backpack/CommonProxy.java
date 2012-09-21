@@ -1,7 +1,7 @@
-package eydamos.minecraft.backpack;
+package backpack;
 
 public class CommonProxy {
-	public static String ITEMS_PNG = "/eydamos/minecraft/backpack/img/items.png";
+	public static String ITEMS_PNG = "/gfx/backpack/items.png";
 	
 	// Client stuff
 	public void registerRenderers () {

@@ -1,4 +1,4 @@
-package eydamos.minecraft.backpack;
+package backpack;
 
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
@@ -25,7 +25,7 @@ public class Backpack {
 	@Instance("Backpack")
 	public static Backpack instance;
 	
-	@SidedProxy(clientSide="eydamos.minecraft.backpack.ClientProxy", serverSide="eydamos.minecraft.backpack.CommonProxy")
+	@SidedProxy(clientSide="backpack.ClientProxy", serverSide="backpack.CommonProxy")
 	public static CommonProxy proxy;
 	
 	@PreInit
@@ -36,12 +36,11 @@ public class Backpack {
 	@Init
 	public void load(FMLInitializationEvent event) {
 		ItemStack backpackStack = new ItemStack(backpackItem, 1, 0);
-		ItemStack leatherStack = new ItemStack(Item.leather, 1, 0);
 		ItemStack colorStack = new ItemStack(Item.dyePowder, 1, 0);
 		
 		// Normal Backpack without dye
 		GameRegistry.addRecipe(backpackStack, "LLL", "L L", "LLL",
-				'L', leatherStack);
+				'L', Item.leather);
 		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[0]);
 		
 		// Backpacks from red to white
@@ -49,19 +48,15 @@ public class Backpack {
 			backpackStack = new ItemStack(backpackItem, 1, i);
 			colorStack = new ItemStack(Item.dyePowder, 1, i);
 			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
-					'L', leatherStack, 'D', colorStack);
+					'L', Item.leather, 'D', colorStack);
 			LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[i]);
 		}
 		
 		// Magic Backpack
 		backpackStack = new ItemStack(backpackItem, 1, BackpackItem.MAGICBACKPACK);
-		colorStack = new ItemStack(Item.diamond);
 		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
-				'L', leatherStack, 'D', colorStack);
+				'L', Item.leather, 'D', Item.eyeOfEnder);
 		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[16]);
-		
-		// register GuiHandler for backpack name change
-		NetworkRegistry.instance().registerGuiHandler(this, new BackpackGuiHandler());
 	}
 	
 	@PostInit

@@ -1,45 +1,53 @@
-package eydamos.minecraft.backpack;
+package backpack;
 
 import java.util.List;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-
-import net.minecraft.src.Container;
 import net.minecraft.src.CreativeTabs;
 import net.minecraft.src.EntityPlayer;
-import net.minecraft.src.EntityPlayerSP;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
-import net.minecraft.src.ModLoader;
 import net.minecraft.src.NBTTagCompound;
-import net.minecraft.src.StringTranslate;
 import net.minecraft.src.World;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.network.NetworkRegistry;
 
 public class BackpackItem extends Item {
 	public static final int colors[] = {
-			0xf09954, 0xFF3333, 0x44BB33, 0x51301a, 0x6666FF, 0xFF66FF, 0x66FFFF, 0x999999,
-			0xBBBBBB, 0xFFaaaa, 0xAAFF66, 0xFFFF66, 0xaaccFF, 0xcc55d0, 0xFFBB00, 0xf0f0f0,
-			0x00ffff
+			0xf09954, // Backpack
+			0xdc4c4c, // Red Backpack
+			0x7fac3b, // Green Backpack
+			0xb4805c, // Brown Backpack
+			0x587fdf, // Blue Backpack
+			0xc58de2, // Purple Backpack
+			0x4b9fc1, // Cyan Backpack
+			0xD9D9D9, // Light Gray Backpack
+			0xBBBBBB, // Gray Backpack
+			0xF7B4D6, // Pink Backpack
+			0x90e227, // Lime Green Backpack
+			0xE7E72A, // Yellow Backpack
+			0xaaccFF, // Light Blue Backpack
+			0xe08edb, // Magenta Backpack
+			0xFFBB00, // Orange Backpack
+			0xffffff, // White Backpack
+			0x349988// Ender Backpack
 	};
 
 	static final String[] backpackNames = {
 			"Backpack", "Red Backpack", "Green Backpack", "Brown Backpack", "Blue Backpack",
 			"Purple Backpack", "Cyan Backpack", "Light Gray Backpack", "Gray Backpack",
 			"Pink Backpack", "Lime Green Backpack", "Yellow Backpack", "Light Blue Backpack",
-			"Magenta Backpack", "Orange Backpack", "White Backpack", "Magic Backpack"
+			"Magenta Backpack", "Orange Backpack", "White Backpack", "Ender Backpack"
 	};
 
 	public static final int MAGICBACKPACK = 31999;
 
-	private BackpackInventory backpackInventory = null;
-
 	protected BackpackItem(int id) {
 		super(id);
-		setMaxStackSize(1);
-		setTabToDisplayOn(CreativeTabs.tabMisc);
 		setIconIndex(0);
-		setItemName("backpack");
+		setMaxStackSize(1);
 		setHasSubtypes(true);
+		setItemName("backpack");
+		setTabToDisplayOn(CreativeTabs.tabMisc);
 	}
 
 	@Override
@@ -73,7 +81,7 @@ public class BackpackItem extends Item {
 			}
 		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			return StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
+			return backpackNames[itemstack.getItemDamage()];
 		}
 		if(itemstack.getItemDamage() == MAGICBACKPACK) {
 			return backpackNames[16];
@@ -82,38 +90,26 @@ public class BackpackItem extends Item {
 	}
 
 	@Override
-	public int getMetadata(int damageValue) {
-		return damageValue;
-	}
-
-	@Override
 	public ItemStack onItemRightClick(ItemStack is, World world, EntityPlayer player) {
 		if(world.isRemote) {
 			return is;
 		}
 		
-		if(player.isSneaking()){
-		    BackpackGui gb = new BackpackGui(player);
-		    FMLCommonHandler.instance().showGuiScreen(gb);
-		    return is;
-		}
-
 		if(is.getTagCompound() == null) {
 			is.setTagCompound(new NBTTagCompound());
 		}
-		BackpackInventory inv = new BackpackInventory(player, is);
-
+		BackpackInventory inv  = new BackpackInventory(player, is);
 		if(!inv.hasInventory()) {
 			inv.createInventory(getItemNameIS(is));
 		}
-
-		inv.loadInventory();
-
-		player.displayGUIChest(inv);
 		
+		inv.loadInventory();
+		
+		player.displayGUIChest(inv);
+
 		return is;
 	}
-	
+
 	@Override
 	public String getItemDisplayName(ItemStack itemstack) {
 		if(itemstack.getTagCompound() != null) {
@@ -122,7 +118,7 @@ public class BackpackItem extends Item {
 			}
 		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			return StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
+			return backpackNames[itemstack.getItemDamage()];
 		}
 		if(itemstack.getItemDamage() == MAGICBACKPACK) {
 			return backpackNames[16];

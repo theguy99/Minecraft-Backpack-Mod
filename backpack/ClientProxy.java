@@ -1,5 +1,6 @@
-package eydamos.minecraft.backpack;
+package backpack;
 
+import backpack.CommonProxy;
 import net.minecraftforge.client.MinecraftForgeClient;
 
 public class ClientProxy extends CommonProxy {
