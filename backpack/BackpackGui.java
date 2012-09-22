@@ -1,20 +1,15 @@
 package backpack;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-
 import net.minecraft.src.EntityClientPlayerMP;
 import net.minecraft.src.EntityPlayer;
-import net.minecraft.src.EntityPlayerMP;
 import net.minecraft.src.GuiButton;
 import net.minecraft.src.GuiScreen;
 import net.minecraft.src.GuiTextField;
+import net.minecraft.src.ItemStack;
+import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.Packet250CustomPayload;
 
 import org.lwjgl.input.Keyboard;
-
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Side;
 
 public class BackpackGui extends GuiScreen {
 	private String TITLE = "Rename your backpack";
@@ -24,41 +19,45 @@ public class BackpackGui extends GuiScreen {
 	private GuiButton btn_ok, btn_cancel;
 
 	/**
-	 * Basic constructor. Takes instance of EntityPlayer to send a package to the server.
-	 * @param player The player who sends the package with the new name to the server.
+	 * Basic constructor. Takes instance of EntityPlayer to send a package to
+	 * the server.
+	 * 
+	 * @param player
+	 *            The player who sends the package with the new name to the
+	 *            server.
 	 */
 	public BackpackGui(EntityPlayer player) {
 		entityPlayer = player;
 	}
 
 	/**
-     * Called from the main game loop to update the screen.
-     */
+	 * Called from the main game loop to update the screen.
+	 */
 	@Override
 	public void updateScreen() {
 		txt_backpackName.updateCursorCounter();
 	}
 
 	/**
-	 * Initializes the GUI elements
+	 * Initializes the GUI elements.
 	 */
 	@Override
 	public void initGui() {
 		Keyboard.enableRepeatEvents(false);
 		// clear control list
 		controlList.clear();
-		
+
 		// create button for ok and disable it at the beginning
 		int posX = width / 2 + 100 - 80;
 		int posY = height / 2 + 50 - 24;
 		btn_ok = new GuiButton(0, posX, posY, 60, 20, "OK");
 		btn_ok.enabled = false;
-		
+
 		// create button for cancel
 		posX = width / 2 - 100 + 20;
 		posY = height / 2 + 50 - 24;
 		btn_cancel = new GuiButton(1, posX, posY, 60, 20, "Cancel");
-		
+
 		// add buttons to control list
 		controlList.add(btn_ok);
 		controlList.add(btn_cancel);
@@ -72,40 +71,40 @@ public class BackpackGui extends GuiScreen {
 	}
 
 	/**
-     * Fired when a control is clicked. This is the equivalent of ActionListener.actionPerformed(ActionEvent e).
-     */
+	 * Fired when a control is clicked. This is the equivalent of
+	 * ActionListener.actionPerformed(ActionEvent e).
+	 */
 	@Override
 	protected void actionPerformed(GuiButton guibutton) {
 		// if button is disabled ignore click
 		if(!guibutton.enabled) {
 			return;
 		}
-		
+
 		// id 0 = ok; id 1 = cancel
 		switch(guibutton.id) {
 			case 0:
 				String name = txt_backpackName.getText().trim();
-				
+	
 				sendNewNameToServer(name);
-
+	
 				// save the name
 				if(entityPlayer.getCurrentEquippedItem() != null) {
-					System.out.println("Client sagt at actionPerformed: player current item is not null");
-					BackpackInventory inv = new BackpackInventory(entityPlayer, entityPlayer.getCurrentEquippedItem());
+					ItemStack is = entityPlayer.getCurrentEquippedItem();
+					if(!is.hasTagCompound()) {
+						is.setTagCompound(new NBTTagCompound());
+					}
+					BackpackInventory inv = new BackpackInventory(entityPlayer, is);
 					if(!inv.hasInventory()) {
-						System.out.println("Client sagt at actionPerformed: inv has no inventory");
 						inv.createInventory(name);
 					} else {
-						System.out.println("Client sagt at actionPerformed: inv has inventory");
 						inv.loadInventory();
 						inv.setInvName(name);
 					}
 					inv.saveInventory();
-				} else {
-					System.out.println("Client sagt at actionPerformed: player current item is null");
 				}
 			case 1:
-				// remove the gui
+				// remove the GUI
 				mc.displayGuiScreen(null);
 				mc.setIngameFocus();
 				break;
@@ -114,8 +113,9 @@ public class BackpackGui extends GuiScreen {
 	}
 
 	/**
-     * Fired when a key is typed. This is the equivalent of KeyListener.keyTyped(KeyEvent e).
-     */
+	 * Fired when a key is typed. This is the equivalent of
+	 * KeyListener.keyTyped(KeyEvent e).
+	 */
 	@Override
 	protected void keyTyped(char c, int i) {
 		// add char to GuiTextField
@@ -133,8 +133,8 @@ public class BackpackGui extends GuiScreen {
 	}
 
 	/**
-     * Called when the mouse is clicked.
-     */
+	 * Called when the mouse is clicked.
+	 */
 	@Override
 	protected void mouseClicked(int i, int j, int k) {
 		super.mouseClicked(i, j, k);
@@ -143,26 +143,26 @@ public class BackpackGui extends GuiScreen {
 	}
 
 	/**
-     * Draws the screen and all the components in it.
-     */
+	 * Draws the screen and all the components in it.
+	 */
 	@Override
 	public void drawScreen(int i, int j, float f) {
 		// draw transparent background
 		drawDefaultBackground();
 
-		// draw gui background
+		// draw GUI background
 		drawGuiBackground();
 
 		// draw "Rename your Backpack" at the top in the middle
 		int posX = width / 2 - (fontRenderer.getStringWidth(TITLE) / 2);
 		int posY = (height / 2 - 50) + 20;
 		fontRenderer.drawString(TITLE, posX, posY, 0x000000);
-		
+
 		// draw "New name:" at the left site above the GuiTextField
 		posX = width / 2 - 100;
 		posY = (height / 2 - 50) + 35;
 		fontRenderer.drawString("New name:", posX, posY, 0x404040);
-		
+
 		// draw the GuiTextField
 		txt_backpackName.drawTextBox();
 
@@ -171,7 +171,8 @@ public class BackpackGui extends GuiScreen {
 	}
 
 	/**
-	 * Gets the image for the background and renders it in the middle of the screen.
+	 * Gets the image for the background and renders it in the middle of the
+	 * screen.
 	 */
 	protected void drawGuiBackground() {
 		// get id of the texture
@@ -183,20 +184,23 @@ public class BackpackGui extends GuiScreen {
 		int k = (height - 50) / 2;
 		drawTexturedModalRect(j - 100 + 30, k - 50 + 30 + 5, 0, 0, 240, 100);
 	}
-	
+
 	/**
 	 * Send the given name to the server.
-	 * @param name The new name for the backpack.
+	 * 
+	 * @param name
+	 *            The new name for the backpack.
 	 */
 	protected void sendNewNameToServer(String name) {
-		// create packet set channel to send to, data as byte array and length of the data
+		// create packet set channel to send to, data as byte array and length
+		// of the data
 		Packet250CustomPayload packet = new Packet250CustomPayload();
 		packet.channel = "BackpackRename";
 		packet.data = name.getBytes();
 		packet.length = name.getBytes().length;
-		
+
 		// send the packet via players send queue
-		((EntityClientPlayerMP)entityPlayer).sendQueue.addToSendQueue(packet);
+		((EntityClientPlayerMP) entityPlayer).sendQueue.addToSendQueue(packet);
 	}
 
 }

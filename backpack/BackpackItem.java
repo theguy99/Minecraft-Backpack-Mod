@@ -10,9 +10,9 @@ import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.World;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Side;
-import cpw.mods.fml.common.network.NetworkRegistry;
 
 public class BackpackItem extends Item {
+	// the color for each backpack as an integer
 	public static final int colors[] = {
 			0xf09954, // Backpack
 			0xdc4c4c, // Red Backpack
@@ -30,9 +30,10 @@ public class BackpackItem extends Item {
 			0xe08edb, // Magenta Backpack
 			0xFFBB00, // Orange Backpack
 			0xffffff, // White Backpack
-			0x349988// Ender Backpack
+			0x349988  // Ender Backpack
 	};
 
+	// the names of all backpacks
 	static final String[] backpackNames = {
 			"Backpack", "Red Backpack", "Green Backpack", "Brown Backpack", "Blue Backpack",
 			"Purple Backpack", "Cyan Backpack", "Light Gray Backpack", "Gray Backpack",
@@ -40,8 +41,15 @@ public class BackpackItem extends Item {
 			"Magenta Backpack", "Orange Backpack", "White Backpack", "Ender Backpack"
 	};
 
-	public static final int MAGICBACKPACK = 31999;
+	// the damage of an magic backpack
+	public static final int ENDERBACKPACK = 31999;
 
+	/**
+	 * Creates an instance of the backpack item and sets some default values.
+	 * 
+	 * @param id
+	 *            The item id.
+	 */
 	protected BackpackItem(int id) {
 		super(id);
 		setIconIndex(0);
@@ -51,29 +59,61 @@ public class BackpackItem extends Item {
 		setTabToDisplayOn(CreativeTabs.tabMisc);
 	}
 
+	/**
+	 * Returns the image with the items.
+	 * 
+	 * @return The path to the item file.
+	 */
 	@Override
 	public String getTextureFile() {
 		return CommonProxy.ITEMS_PNG;
 	}
 
+	/**
+	 * Returns the color based on the item damage.
+	 * 
+	 * @param damage
+	 *            The damage to check for.
+	 * @param par2
+	 *            unknown
+	 * @return The color as an integer.
+	 */
 	@Override
 	public int getColorFromDamage(int damage, int par2) {
 		if(damage >= 0 && damage < 16) {
 			return colors[damage];
 		}
-		if(damage == MAGICBACKPACK) {
+		if(damage == ENDERBACKPACK) {
 			return colors[16];
 		}
 		return 0;
 	}
 
+	/**
+	 * Returns the sub items.
+	 * 
+	 * @param unknown
+	 *            unknown
+	 * @param tab
+	 *            A creative tab.
+	 * @param A
+	 *            List which stores the sub items.
+	 */
 	@Override
 	public void getSubItems(int unknown, CreativeTabs tab, List subItems) {
 		for(int i = 0; i < 16; i++) {
 			subItems.add(new ItemStack(this, 1, i));
 		}
+		subItems.add(new ItemStack(this, 1, ENDERBACKPACK));
 	}
 
+	/**
+	 * Gets item name based on the ItemStack.
+	 * 
+	 * @param itemstack
+	 *            The ItemStack to use for check.
+	 * @return The name of the backpack.
+	 */
 	@Override
 	public String getItemNameIS(ItemStack itemstack) {
 		if(itemstack.getTagCompound() != null) {
@@ -86,68 +126,81 @@ public class BackpackItem extends Item {
 			// StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
 			return backpackNames[itemstack.getItemDamage()];
 		}
-		if(itemstack.getItemDamage() == MAGICBACKPACK) {
+		if(itemstack.getItemDamage() == ENDERBACKPACK) {
 			return backpackNames[16];
 		}
 		return backpackNames[0];
 	}
 
+	/**
+	 * Handles what should be done on right clicking the item.
+	 * 
+	 * @param is
+	 *            The ItemStack which is right clicked.
+	 * @param world
+	 *            The world in which the player is.
+	 * @param player
+	 *            The player who right clicked the item.
+	 * @param Returns
+	 *            the ItemStack after the process.
+	 */
 	@Override
 	public ItemStack onItemRightClick(ItemStack is, World world, EntityPlayer player) {
 		// if world.isRemote than we are on the client side
 		if(world.isRemote) {
-			// display rename gui if player is sneaking
-			if(player.isSneaking()){
-				
+			// display rename GUI if player is sneaking
+			if(player.isSneaking()) {
 				FMLCommonHandler.instance().showGuiScreen(new BackpackGui(player));
-				System.out.println("gui vorbei");
-				return player.getCurrentEquippedItem();
 			}
+			return is;
 		}
+
+		// when the player is not sneaking
 		if(!player.isSneaking()) {
+			// if the ItemStack has no NBTTagCompound create one
 			if(!is.hasTagCompound()) {
 				is.setTagCompound(new NBTTagCompound());
 			}
-			BackpackInventory inv  = new BackpackInventory(player, is);
+			// create the inventory
+			BackpackInventory inv = new BackpackInventory(player, is);
+			// if there is no inventory in the item create one
 			if(!inv.hasInventory()) {
 				inv.createInventory(getItemNameIS(is));
 			}
-	
+
+			// load the inventory content and title
 			inv.loadInventory();
-			Side side = FMLCommonHandler.instance().getEffectiveSide();
-			if(side == Side.SERVER) {
-				System.out.println("Server displays guichest " + inv.getInvName() + player.getCurrentEquippedItem().getTagCompound().getCompoundTag("Inventory").getTagList("Items").tagCount());
-			} else if(side == Side.CLIENT) {
-				System.out.println("Client displays guichest " + inv.getInvName() + player.getCurrentEquippedItem().getTagCompound().getCompoundTag("Inventory").getTagList("Items").tagCount());
-			}
+
+			// open the GUI for a chest based on the loaded inventory
 			player.displayGUIChest(inv);
 		}
 		return is;
 	}
 
+	/**
+	 * Returns the item name to display in the tooltip.
+	 * @param itemstack The ItemStack to use for check.
+	 * @return The name of the backpack for the tooltip.
+	 */
 	@Override
 	public String getItemDisplayName(ItemStack itemstack) {
-		String name = backpackNames[0];
+		// it ItemStack has a NBTTagCompound load name from inventory title.
 		if(itemstack.hasTagCompound()) {
 			if(itemstack.getTagCompound().hasKey("Inventory")) {
-				name = itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
+				return itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
 			}
 		}
+		// else if damage is between 0 and 15 return name from backpackNames array
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			name = backpackNames[itemstack.getItemDamage()];
+			return backpackNames[itemstack.getItemDamage()];
 		}
-		if(itemstack.getItemDamage() == MAGICBACKPACK) {
-			name = backpackNames[16];
+		// else if damage is equal to ENDERBACKPACK then return backpackNames index 16
+		if(itemstack.getItemDamage() == ENDERBACKPACK) {
+			return backpackNames[16];
 		}
-		
-		Side side = FMLCommonHandler.instance().getEffectiveSide();
-		if(side == Side.SERVER) {
-			System.out.println("Server says name is " + name);
-		} else if(side == Side.CLIENT) {
-			System.out.println("Client says name is " + name);
-		}
-		
-		return name;
+
+		// return index 0 of backpackNames array as fallback
+		return backpackNames[0];
 	}
 
 }

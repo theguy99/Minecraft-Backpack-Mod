@@ -11,25 +11,52 @@ import net.minecraft.src.NBTTagList;
 import net.minecraft.src.TileEntity;
 
 public class BackpackInventory implements IInventory {
+	// number of slots 3 lines a 9 slots
 	private static final int slotsCount = 27;
+	// the content of the inventory
 	private ItemStack inventoryContents[];
 
-	private boolean magic;
+	// if the backpack is an ender backpack or not
+	private boolean isEnder;
+	// the default title of the backpack
 	private String inventoryTitle = "Backpack";
-	
+
+	// a instance of the player to get the used item and for magic backpack
 	private EntityPlayer playerEntity;
 
+	/**
+	 * Takes a player and an ItemStack.
+	 * 
+	 * @param player
+	 *            The player which has the backpack.
+	 * @param is
+	 *            The ItemStack which holds the backpack.
+	 */
 	public BackpackInventory(EntityPlayer player, ItemStack is) {
 		playerEntity = player;
-		setMagic(is.getItemDamage());
+		setEnderbackpack(is.getItemDamage());
 		inventoryContents = new ItemStack[slotsCount];
 	}
 
+	/**
+	 * Returns how many slots the backpack has.
+	 * 
+	 * @return The number of slots in the backpack.
+	 */
 	@Override
 	public int getSizeInventory() {
 		return slotsCount;
 	}
 
+	/**
+	 * Returns the ItemStack in the given slot or null if the slot doesn't
+	 * exists.
+	 * 
+	 * @param position
+	 *            The position of the slot.
+	 * @return Returns an ItemStack or null if slot at position is empty or
+	 *         position is greater slotsCount.
+	 */
 	@Override
 	public ItemStack getStackInSlot(int position) {
 		if(position < slotsCount) {
@@ -38,6 +65,15 @@ public class BackpackInventory implements IInventory {
 		return null;
 	}
 
+	/**
+	 * Decreases the ItemStack at the given position.
+	 * 
+	 * @param position
+	 *            The position of the ItemStack.
+	 * @param decrease
+	 *            The number the ItemStack is reduced by.
+	 * @return The decreased ItemStack.
+	 */
 	@Override
 	public ItemStack decrStackSize(int position, int decrease) {
 		if(inventoryContents[position] != null) {
@@ -65,6 +101,14 @@ public class BackpackInventory implements IInventory {
 		return null;
 	}
 
+	/**
+	 * Sets an ItemStack at the given position.
+	 * 
+	 * @param position
+	 *            The position where the ItemStack should be put in.
+	 * @param itemstack
+	 *            The ItemStack which should be put in the inventory.
+	 */
 	@Override
 	public void setInventorySlotContents(int position, ItemStack itemstack) {
 		inventoryContents[position] = itemstack;
@@ -73,31 +117,57 @@ public class BackpackInventory implements IInventory {
 		}
 	}
 
+	/**
+	 * Returns the title of the inventory.
+	 * 
+	 * @return The title.
+	 */
 	@Override
 	public String getInvName() {
 		return inventoryTitle;
 	}
 
+	/**
+	 * Returns the maximum stack size an ItemStack could have.
+	 * 
+	 * @return The maximum stack size.
+	 */
 	@Override
 	public int getInventoryStackLimit() {
 		return 64;
 	}
 
+	/**
+	 * Is called whenever something is changed in the inventory.
+	 */
 	@Override
 	public void onInventoryChanged() {
 		saveInventory();
 	}
 
+	/**
+	 * Returns if this inventory is usable by a player.
+	 * 
+	 * @return True if user can use it false otherwise.
+	 */
 	@Override
 	public boolean isUseableByPlayer(EntityPlayer player) {
 		return true;
 	}
 
+	/**
+	 * This method is called when the chest opens the inventory. It loads the
+	 * content of the inventory and its title.
+	 */
 	@Override
 	public void openChest() {
 		loadInventory();
 	}
 
+	/**
+	 * This method is called when the chest closes the inventory. It then throws
+	 * out every backpack which is inside the backpack and saves the inventory.
+	 */
 	@Override
 	public void closeChest() {
 		dropContainedBackpacks();
@@ -105,27 +175,40 @@ public class BackpackInventory implements IInventory {
 	}
 
 	// ***** custom methods which are not in IInventory *****
+	/**
+	 * Returns the NBTTagCompound of the user it the backpack is magic or the
+	 * NBTTagCompound of the currently used item.
+	 * 
+	 * @return Returns the NBTTagCompound.
+	 */
 	public NBTTagCompound getNBT() {
 		NBTTagCompound nbt = null;
-		if(magic) {
+		if(isEnder) {
 			nbt = playerEntity.getEntityData();
 		} else {
 			if(!playerEntity.getCurrentEquippedItem().hasTagCompound()) {
-				playerEntity.getCurrentEquippedItem().setTagCompound(new NBTTagCompound());	
+				playerEntity.getCurrentEquippedItem().setTagCompound(new NBTTagCompound());
 			}
 			nbt = playerEntity.getCurrentEquippedItem().getTagCompound();
 		}
-		
+
 		return nbt;
 	}
-	
+
 	/**
-	 * loads the content of the inventory from the NBT.
+	 * Sets the name of the inventory.
+	 * 
+	 * @param name
+	 *            The new name.
 	 */
 	public void setInvName(String name) {
 		inventoryTitle = name;
 	}
-	
+
+	/**
+	 * If there is no inventory create one. Then load the content and title of
+	 * the inventory from the NBT
+	 */
 	public void loadInventory() {
 		if(!hasInventory()) {
 			createInventory(null);
@@ -143,6 +226,9 @@ public class BackpackInventory implements IInventory {
 
 	/**
 	 * Creates the Inventory Tag in the NBT with an empty inventory.
+	 * 
+	 * @param name
+	 *            The name of the inventory or null for default.
 	 */
 	public void createInventory(String name) {
 		if(name == null) {
@@ -156,28 +242,30 @@ public class BackpackInventory implements IInventory {
 	/**
 	 * Returns if an Inventory is saved in the NBT.
 	 * 
-	 * @return
+	 * @return True when the NBT has key "Inventory" otherwise false.
 	 */
 	public boolean hasInventory() {
 		return getNBT().hasKey("Inventory");
 	}
 
 	/**
-	 * Sets magic to true or false based on the item damage to identify a magic backpack.
+	 * Sets magic to true or false based on the item damage to identify a magic
+	 * backpack.
+	 * 
+	 * @param itemDamage
+	 *            The damage of the item.
 	 */
-	public void setMagic(int itemDamage) {
-		magic = (itemDamage == BackpackItem.MAGICBACKPACK);
+	public void setEnderbackpack(int itemDamage) {
+		isEnder = (itemDamage == BackpackItem.ENDERBACKPACK);
 	}
 
 	/**
 	 * Drops Backpacks on the ground which are in this backpack
-	 * 
-	 * @return
 	 */
 	public void dropContainedBackpacks() {
 		for(int i = 0; i < getSizeInventory(); i++) {
 			if(getStackInSlot(i) != null
-					&& getStackInSlot(i).itemID == Backpack.backpackItem.shiftedIndex) {
+					&& getStackInSlot(i).getItemDamage() == BackpackItem.ENDERBACKPACK) {
 				playerEntity.dropPlayerItem(getStackInSlot(i).copy());
 				setInventorySlotContents(i, null);
 			}
@@ -195,7 +283,7 @@ public class BackpackInventory implements IInventory {
 		if(outerTag == null) {
 			return null;
 		}
-		
+
 		outerTag.setString("title", getInvName());
 
 		NBTTagList itemList = new NBTTagList();
@@ -222,7 +310,7 @@ public class BackpackInventory implements IInventory {
 		if(outerTag == null) {
 			return;
 		}
-		
+
 		setInvName(outerTag.getString("title"));
 
 		NBTTagList itemList = outerTag.getTagList("Items");
