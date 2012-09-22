@@ -9,6 +9,7 @@ import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.World;
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Side;
 import cpw.mods.fml.common.network.NetworkRegistry;
 
 public class BackpackItem extends Item {
@@ -81,6 +82,8 @@ public class BackpackItem extends Item {
 			}
 		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
+			// return
+			// StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
 			return backpackNames[itemstack.getItemDamage()];
 		}
 		if(itemstack.getItemDamage() == MAGICBACKPACK) {
@@ -91,39 +94,60 @@ public class BackpackItem extends Item {
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack is, World world, EntityPlayer player) {
+		// if world.isRemote than we are on the client side
 		if(world.isRemote) {
-			return is;
+			// display rename gui if player is sneaking
+			if(player.isSneaking()){
+				
+				FMLCommonHandler.instance().showGuiScreen(new BackpackGui(player));
+				System.out.println("gui vorbei");
+				return player.getCurrentEquippedItem();
+			}
 		}
-		
-		if(is.getTagCompound() == null) {
-			is.setTagCompound(new NBTTagCompound());
+		if(!player.isSneaking()) {
+			if(!is.hasTagCompound()) {
+				is.setTagCompound(new NBTTagCompound());
+			}
+			BackpackInventory inv  = new BackpackInventory(player, is);
+			if(!inv.hasInventory()) {
+				inv.createInventory(getItemNameIS(is));
+			}
+	
+			inv.loadInventory();
+			Side side = FMLCommonHandler.instance().getEffectiveSide();
+			if(side == Side.SERVER) {
+				System.out.println("Server displays guichest " + inv.getInvName() + player.getCurrentEquippedItem().getTagCompound().getCompoundTag("Inventory").getTagList("Items").tagCount());
+			} else if(side == Side.CLIENT) {
+				System.out.println("Client displays guichest " + inv.getInvName() + player.getCurrentEquippedItem().getTagCompound().getCompoundTag("Inventory").getTagList("Items").tagCount());
+			}
+			player.displayGUIChest(inv);
 		}
-		BackpackInventory inv  = new BackpackInventory(player, is);
-		if(!inv.hasInventory()) {
-			inv.createInventory(getItemNameIS(is));
-		}
-		
-		inv.loadInventory();
-		
-		player.displayGUIChest(inv);
-
 		return is;
 	}
 
 	@Override
 	public String getItemDisplayName(ItemStack itemstack) {
-		if(itemstack.getTagCompound() != null) {
+		String name = backpackNames[0];
+		if(itemstack.hasTagCompound()) {
 			if(itemstack.getTagCompound().hasKey("Inventory")) {
-				return itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
+				name = itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
 			}
 		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			return backpackNames[itemstack.getItemDamage()];
+			name = backpackNames[itemstack.getItemDamage()];
 		}
 		if(itemstack.getItemDamage() == MAGICBACKPACK) {
-			return backpackNames[16];
+			name = backpackNames[16];
 		}
-		return backpackNames[0];
+		
+		Side side = FMLCommonHandler.instance().getEffectiveSide();
+		if(side == Side.SERVER) {
+			System.out.println("Server says name is " + name);
+		} else if(side == Side.CLIENT) {
+			System.out.println("Client says name is " + name);
+		}
+		
+		return name;
 	}
 
 }

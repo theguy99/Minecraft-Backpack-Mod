@@ -110,7 +110,7 @@ public class BackpackInventory implements IInventory {
 		if(magic) {
 			nbt = playerEntity.getEntityData();
 		} else {
-			if(playerEntity.getCurrentEquippedItem().getTagCompound() == null) {
+			if(!playerEntity.getCurrentEquippedItem().hasTagCompound()) {
 				playerEntity.getCurrentEquippedItem().setTagCompound(new NBTTagCompound());	
 			}
 			nbt = playerEntity.getCurrentEquippedItem().getTagCompound();

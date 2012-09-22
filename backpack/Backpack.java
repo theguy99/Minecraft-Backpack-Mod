@@ -17,7 +17,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
 @Mod(modid="Backpack", name="Backpack", version="1.0.0")
-@NetworkMod(clientSideRequired=true, serverSideRequired=false)
+@NetworkMod(clientSideRequired=true, serverSideRequired=false, channels={"BackpackRename"}, packetHandler = BackpackPacketHandler.class)
 public class Backpack {
 	private static final int backpackItemId = 18330;
 	public static final Item backpackItem = new BackpackItem(backpackItemId);
@@ -57,6 +57,9 @@ public class Backpack {
 		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
 				'L', Item.leather, 'D', Item.eyeOfEnder);
 		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[16]);
+		
+		// register GuiHandler for backpack name change
+		NetworkRegistry.instance().registerGuiHandler(this, new BackpackGuiHandler());
 	}
 	
 	@PostInit
