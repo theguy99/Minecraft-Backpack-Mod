@@ -1,14 +1,10 @@
 package backpack;
 
-import com.google.common.collect.ContiguousSet;
-
 import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.IInventory;
-import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.NBTTagList;
-import net.minecraft.src.TileEntity;
 
 public class BackpackInventory implements IInventory {
 	// number of slots 3 lines a 9 slots
@@ -18,11 +14,18 @@ public class BackpackInventory implements IInventory {
 
 	// if the backpack is an ender backpack or not
 	private boolean isEnder;
+	// the content of the ender backpack
+	private static NBTTagCompound enderBackpack;
+	
 	// the default title of the backpack
-	private String inventoryTitle = "Backpack";
+	private String inventoryTitle;
 
-	// a instance of the player to get the used item and for magic backpack
+	// an instance of the player to get the used item and for magic backpack
 	private EntityPlayer playerEntity;
+	// the original ItemStack to compare with the player inventory
+	private ItemStack originalIS;
+	// the NBT data of the inventory
+	private NBTTagCompound data;
 
 	/**
 	 * Takes a player and an ItemStack.
@@ -33,9 +36,23 @@ public class BackpackInventory implements IInventory {
 	 *            The ItemStack which holds the backpack.
 	 */
 	public BackpackInventory(EntityPlayer player, ItemStack is) {
-		playerEntity = player;
-		setEnderbackpack(is.getItemDamage());
 		inventoryContents = new ItemStack[slotsCount];
+		playerEntity = player;
+		originalIS = is;
+
+		// set if ender backpack or not
+		setEnderbackpack(is.getItemDamage());
+
+		// check if inventory exists if not create one
+		NBTTagCompound nbt = (isEnder) ? player.getEntityData() : is.getTagCompound();
+		if(!hasInventory(nbt)) {
+			createInventory();
+		}
+
+		// get NBTTagCompound from player or ItemStack
+		getNBT();
+
+		loadInventory();
 	}
 
 	/**
@@ -176,23 +193,79 @@ public class BackpackInventory implements IInventory {
 
 	// ***** custom methods which are not in IInventory *****
 	/**
-	 * Returns the NBTTagCompound of the user it the backpack is magic or the
-	 * NBTTagCompound of the currently used item.
-	 * 
-	 * @return Returns the NBTTagCompound.
+	 * Saves the NBTTagCompound of the user if the backpack is an ender backpack
+	 * or the NBTTagCompound of the currently used item in the data attribute.
 	 */
-	public NBTTagCompound getNBT() {
-		NBTTagCompound nbt = null;
+	private void getNBT() {
+		data = new NBTTagCompound();
 		if(isEnder) {
-			nbt = playerEntity.getEntityData();
+			data = playerEntity.getEntityData();
 		} else {
-			if(!playerEntity.getCurrentEquippedItem().hasTagCompound()) {
-				playerEntity.getCurrentEquippedItem().setTagCompound(new NBTTagCompound());
-			}
-			nbt = playerEntity.getCurrentEquippedItem().getTagCompound();
+			data = (NBTTagCompound) originalIS.getTagCompound();
 		}
+	}
 
-		return nbt;
+	/**
+	 * Searches the backpack in players inventory and saves NBT data in it.
+	 */
+	private void setNBT() {
+		if(isEnder) {
+			enderBackpack = data.getCompoundTag("Inventory");
+		} else {
+			// get players inventory
+			ItemStack[] inventory = playerEntity.inventory.mainInventory;
+			ItemStack itemStack;
+			// iterate over all items in player inventory
+			for(int i = 0; i < inventory.length; i++) {
+				// get ItemStack at slot i
+				itemStack = inventory[i];
+				// check if slot is not null and ItemStack is equal to original
+				if(itemStack != null && isItemStackEqual(itemStack)) {
+					// save new data in ItemStack
+					itemStack.setTagCompound(data);
+					break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Checks if ItemStack is equal to the original ItemStack.
+	 * 
+	 * @param itemStack
+	 *            The ItemStack to check.
+	 * @return true if equal otherwise false.
+	 */
+	private boolean isItemStackEqual(ItemStack itemStack) {
+		// check if ItemStack is a BackpackItem and normal properties are equal
+		if(itemStack.getItem() instanceof BackpackItem && itemStack.isStackEqual(originalIS)) {
+			// never opened backpacks have no NBT so make sure it is there
+			if(itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("Inventory")) {
+				// check if NBT data is equal too
+				return isTagCompoundEqual(itemStack);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if ItemStacks NBT data is equal to original ItemStacks NBT data.
+	 * 
+	 * @param itemStack
+	 *            The ItemStack to check.
+	 * @return true if equal otherwise false.
+	 */
+	private boolean isTagCompoundEqual(ItemStack itemStack) {
+		NBTTagCompound itemStackTag = itemStack.getTagCompound().getCompoundTag("Inventory");
+		NBTTagCompound origItemStackTag = originalIS.getTagCompound().getCompoundTag("Inventory");
+
+		// check if title is unequal
+		if(itemStackTag.getString("title") != origItemStackTag.getString("title")) {
+			return false;
+		}
+		
+		// everything is equal
+		return true;
 	}
 
 	/**
@@ -210,42 +283,50 @@ public class BackpackInventory implements IInventory {
 	 * the inventory from the NBT
 	 */
 	public void loadInventory() {
-		if(!hasInventory()) {
-			createInventory(null);
-		}
-
-		readFromTag(getNBT().getCompoundTag("Inventory"));
+		readFromTag(data.getCompoundTag("Inventory"));
 	}
 
 	/**
 	 * Saves the actual content of the inventory to the NBT.
 	 */
 	public void saveInventory() {
-		writeToTag(getNBT().getCompoundTag("Inventory"));
+		writeToTag(data.getCompoundTag("Inventory"));
+		setNBT();
 	}
 
 	/**
 	 * Creates the Inventory Tag in the NBT with an empty inventory.
-	 * 
-	 * @param name
-	 *            The name of the inventory or null for default.
 	 */
-	public void createInventory(String name) {
-		if(name == null) {
-			setInvName("Backpack");
+	private void createInventory() {
+		// new String so that a new String object is created
+		// so that title == title is false
+		// needed for two new created backpacks
+		setInvName(new String(originalIS.getItemName()));
+		NBTTagCompound nbt;
+		if(isEnder) {
+			if(enderBackpack != null) {
+				nbt = enderBackpack;
+			} else {
+				nbt = writeToTag(new NBTTagCompound());
+			}
+			playerEntity.getEntityData().setCompoundTag("Inventory", nbt);
 		} else {
-			setInvName(name);
+			nbt = new NBTTagCompound();
+			nbt.setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
+			originalIS.setTagCompound(nbt);
 		}
-		getNBT().setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
 	}
 
 	/**
 	 * Returns if an Inventory is saved in the NBT.
 	 * 
-	 * @return True when the NBT has key "Inventory" otherwise false.
+	 * @param nbt
+	 *            The NBTTagCompound to check for an inventory.
+	 * @return True when the NBT is not null and the NBT has key "Inventory"
+	 *         otherwise false.
 	 */
-	public boolean hasInventory() {
-		return getNBT().hasKey("Inventory");
+	private boolean hasInventory(NBTTagCompound nbt) {
+		return (nbt != null && nbt.hasKey("Inventory"));
 	}
 
 	/**
@@ -255,18 +336,18 @@ public class BackpackInventory implements IInventory {
 	 * @param itemDamage
 	 *            The damage of the item.
 	 */
-	public void setEnderbackpack(int itemDamage) {
+	private void setEnderbackpack(int itemDamage) {
 		isEnder = (itemDamage == BackpackItem.ENDERBACKPACK);
 	}
 
 	/**
 	 * Drops Backpacks on the ground which are in this backpack
 	 */
-	public void dropContainedBackpacks() {
+	private void dropContainedBackpacks() {
 		for(int i = 0; i < getSizeInventory(); i++) {
-			if(getStackInSlot(i) != null
-					&& getStackInSlot(i).getItemDamage() == BackpackItem.ENDERBACKPACK) {
-				playerEntity.dropPlayerItem(getStackInSlot(i).copy());
+			ItemStack item = getStackInSlot(i);
+			if(item != null && item.getItem() instanceof BackpackItem) {
+				playerEntity.dropPlayerItem(getStackInSlot(i));
 				setInventorySlotContents(i, null);
 			}
 		}
@@ -279,7 +360,7 @@ public class BackpackInventory implements IInventory {
 	 *            The NBT Node to write to.
 	 * @return The written NBT Node.
 	 */
-	public NBTTagCompound writeToTag(NBTTagCompound outerTag) {
+	private NBTTagCompound writeToTag(NBTTagCompound outerTag) {
 		if(outerTag == null) {
 			return null;
 		}
@@ -306,7 +387,7 @@ public class BackpackInventory implements IInventory {
 	 * @param outerTag
 	 *            The NBT Node to read from.
 	 */
-	public void readFromTag(NBTTagCompound outerTag) {
+	private void readFromTag(NBTTagCompound outerTag) {
 		if(outerTag == null) {
 			return;
 		}

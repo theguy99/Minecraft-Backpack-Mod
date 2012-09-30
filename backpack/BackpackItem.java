@@ -6,10 +6,8 @@ import net.minecraft.src.CreativeTabs;
 import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
-import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.World;
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Side;
 
 public class BackpackItem extends Item {
 	// the color for each backpack as an integer
@@ -157,19 +155,8 @@ public class BackpackItem extends Item {
 
 		// when the player is not sneaking
 		if(!player.isSneaking()) {
-			// if the ItemStack has no NBTTagCompound create one
-			if(!is.hasTagCompound()) {
-				is.setTagCompound(new NBTTagCompound());
-			}
 			// create the inventory
 			BackpackInventory inv = new BackpackInventory(player, is);
-			// if there is no inventory in the item create one
-			if(!inv.hasInventory()) {
-				inv.createInventory(getItemNameIS(is));
-			}
-
-			// load the inventory content and title
-			inv.loadInventory();
 
 			// open the GUI for a chest based on the loaded inventory
 			player.displayGUIChest(inv);
@@ -202,5 +189,9 @@ public class BackpackItem extends Item {
 		// return index 0 of backpackNames array as fallback
 		return backpackNames[0];
 	}
+	
+	
+	//********** IInventory **********//
+	
 
 }

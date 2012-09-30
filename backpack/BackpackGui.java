@@ -6,7 +6,6 @@ import net.minecraft.src.GuiButton;
 import net.minecraft.src.GuiScreen;
 import net.minecraft.src.GuiTextField;
 import net.minecraft.src.ItemStack;
-import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.Packet250CustomPayload;
 
 import org.lwjgl.input.Keyboard;
@@ -91,16 +90,8 @@ public class BackpackGui extends GuiScreen {
 				// save the name
 				if(entityPlayer.getCurrentEquippedItem() != null) {
 					ItemStack is = entityPlayer.getCurrentEquippedItem();
-					if(!is.hasTagCompound()) {
-						is.setTagCompound(new NBTTagCompound());
-					}
 					BackpackInventory inv = new BackpackInventory(entityPlayer, is);
-					if(!inv.hasInventory()) {
-						inv.createInventory(name);
-					} else {
-						inv.loadInventory();
-						inv.setInvName(name);
-					}
+					inv.setInvName(name);
 					inv.saveInventory();
 				}
 			case 1:

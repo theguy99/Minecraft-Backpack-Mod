@@ -2,7 +2,6 @@ package backpack;
 
 import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.ItemStack;
-import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.NetworkManager;
 import net.minecraft.src.Packet250CustomPayload;
 import cpw.mods.fml.common.network.IPacketHandler;
@@ -40,16 +39,10 @@ public class BackpackPacketHandler implements IPacketHandler {
 
 		if(entityPlayer.getCurrentEquippedItem() != null) {
 			ItemStack is = entityPlayer.getCurrentEquippedItem();
-			if(!is.hasTagCompound()) {
-				is.setTagCompound(new NBTTagCompound());
-			}
 			BackpackInventory inv = new BackpackInventory(entityPlayer, is);
-			if(!inv.hasInventory()) {
-				inv.createInventory(name);
-			} else {
-				inv.loadInventory();
-				inv.setInvName(name);
-			}
+			// set new name
+			inv.setInvName(name);
+			// save the new data
 			inv.saveInventory();
 		}
 	}
