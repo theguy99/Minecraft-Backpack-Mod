@@ -10,27 +10,6 @@ import net.minecraft.src.World;
 import cpw.mods.fml.common.FMLCommonHandler;
 
 public class BackpackItem extends Item {
-	// the color for each backpack as an integer
-	public static final int colors[] = {
-			0xf09954, // Backpack
-			0xdc4c4c, // Red Backpack
-			0x7fac3b, // Green Backpack
-			0xb4805c, // Brown Backpack
-			0x587fdf, // Blue Backpack
-			0xc58de2, // Purple Backpack
-			0x4b9fc1, // Cyan Backpack
-			0xD9D9D9, // Light Gray Backpack
-			0xBBBBBB, // Gray Backpack
-			0xF7B4D6, // Pink Backpack
-			0x90e227, // Lime Green Backpack
-			0xE7E72A, // Yellow Backpack
-			0xaaccFF, // Light Blue Backpack
-			0xe08edb, // Magenta Backpack
-			0xFFBB00, // Orange Backpack
-			0xffffff, // White Backpack
-			0x349988  // Ender Backpack
-	};
-
 	// the names of all backpacks
 	static final String[] backpackNames = {
 			"Backpack", "Red Backpack", "Green Backpack", "Brown Backpack", "Blue Backpack",
@@ -68,24 +47,22 @@ public class BackpackItem extends Item {
 	}
 
 	/**
-	 * Returns the color based on the item damage.
+	 * Returns the icon index based on the item damage.
 	 * 
 	 * @param damage
 	 *            The damage to check for.
-	 * @param par2
-	 *            unknown
-	 * @return The color as an integer.
+	 * @return The icon index.
 	 */
 	@Override
-	public int getColorFromDamage(int damage, int par2) {
+	public int getIconFromDamage(int damage) {
 		if(damage >= 0 && damage < 16) {
-			return colors[damage];
+			return damage;
 		}
 		if(damage == ENDERBACKPACK) {
-			return colors[16];
+			return 16;
 		}
 		return 0;
-	}
+    }
 
 	/**
 	 * Returns the sub items.
