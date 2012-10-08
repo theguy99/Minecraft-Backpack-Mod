@@ -4,6 +4,7 @@ import java.util.List;
 
 import net.minecraft.src.CreativeTabs;
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.IInventory;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.World;
@@ -124,7 +125,7 @@ public class BackpackItem extends Item {
 		// if world.isRemote than we are on the client side
 		if(world.isRemote) {
 			// display rename GUI if player is sneaking
-			if(player.isSneaking()) {
+			if(player.isSneaking() && is.getItemDamage() != BackpackItem.ENDERBACKPACK) {
 				FMLCommonHandler.instance().showGuiScreen(new BackpackGui(player));
 			}
 			return is;
@@ -132,8 +133,13 @@ public class BackpackItem extends Item {
 
 		// when the player is not sneaking
 		if(!player.isSneaking()) {
-			// create the inventory
-			BackpackInventory inv = new BackpackInventory(player, is);
+			// get the inventory
+			IInventory inv;
+			if(is.getItemDamage() == BackpackItem.ENDERBACKPACK) {
+				inv = player.getInventoryEnderChest();
+			} else {
+				inv = new BackpackInventory(player, is);
+			}
 
 			// open the GUI for a chest based on the loaded inventory
 			player.displayGUIChest(inv);

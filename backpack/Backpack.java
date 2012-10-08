@@ -18,7 +18,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
-@Mod(modid = "Backpack", name = "Backpack", version = "1.1.3")
+@Mod(modid = "Backpack", name = "Backpack", version = "1.1.4")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false, channels = {"BackpackRename"}, packetHandler = BackpackPacketHandler.class)
 public class Backpack {
 	// the id of the backpack items
@@ -80,15 +80,17 @@ public class Backpack {
 		for(int i = 1; i < 16; i++) {
 			backpackStack = new ItemStack(backpackItem, 1, i);
 			colorStack = new ItemStack(Item.dyePowder, 1, i);
-			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL", 'L', Item.leather, 'D',
-					colorStack);
+			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL", 
+					'L', Item.leather, 
+					'D', colorStack);
 			LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[i]);
 		}
 
 		// Ender Backpack
 		backpackStack = new ItemStack(backpackItem, 1, BackpackItem.ENDERBACKPACK);
-		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL", 'L', Item.leather, 'D',
-				Item.eyeOfEnder);
+		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
+				'L', Item.leather,
+				'D', Item.eyeOfEnder);
 		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[16]);
 	}
 }
