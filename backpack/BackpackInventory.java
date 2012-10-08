@@ -210,7 +210,7 @@ public class BackpackInventory implements IInventory {
 	 */
 	private void setNBT() {
 		if(isEnder) {
-			enderBackpack = data.getCompoundTag("Inventory");
+			enderBackpack.setCompoundTag(playerEntity.getEntityName(), data.getCompoundTag("Inventory"));
 		} else {
 			// get players inventory
 			ItemStack[] inventory = playerEntity.inventory.mainInventory;
@@ -304,8 +304,8 @@ public class BackpackInventory implements IInventory {
 		setInvName(new String(originalIS.getItemName()));
 		NBTTagCompound nbt;
 		if(isEnder) {
-			if(enderBackpack != null) {
-				nbt = enderBackpack;
+			if(enderBackpack != null && enderBackpack.hasKey(playerEntity.getEntityName())) {
+				nbt = enderBackpack.getCompoundTag(playerEntity.getEntityName());
 			} else {
 				nbt = writeToTag(new NBTTagCompound());
 			}
