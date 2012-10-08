@@ -84,16 +84,9 @@ public class BackpackGui extends GuiScreen {
 		switch(guibutton.id) {
 			case 0:
 				String name = txt_backpackName.getText().trim();
-	
-				sendNewNameToServer(name);
-	
+
 				// save the name
-				if(entityPlayer.getCurrentEquippedItem() != null) {
-					ItemStack is = entityPlayer.getCurrentEquippedItem();
-					BackpackInventory inv = new BackpackInventory(entityPlayer, is);
-					inv.setInvName(name);
-					inv.saveInventory();
-				}
+				sendNewNameToServer(name);
 			case 1:
 				// remove the GUI
 				mc.displayGuiScreen(null);
