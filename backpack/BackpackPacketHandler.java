@@ -1,8 +1,8 @@
 package backpack;
 
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.INetworkManager;
 import net.minecraft.src.ItemStack;
-import net.minecraft.src.NetworkManager;
 import net.minecraft.src.Packet250CustomPayload;
 import cpw.mods.fml.common.network.IPacketHandler;
 import cpw.mods.fml.common.network.Player;
@@ -19,7 +19,7 @@ public class BackpackPacketHandler implements IPacketHandler {
 	 *            The player who sends the packet.
 	 */
 	@Override
-	public void onPacketData(NetworkManager manager, Packet250CustomPayload packet, Player player) {
+	public void onPacketData(INetworkManager manager, Packet250CustomPayload packet, Player player) {
 		if(packet.channel.equals("BackpackRename")) {
 			handlePacket(packet, (EntityPlayer) player);
 		}

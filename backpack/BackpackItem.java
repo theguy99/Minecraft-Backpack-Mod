@@ -34,7 +34,7 @@ public class BackpackItem extends Item {
 		setMaxStackSize(1);
 		setHasSubtypes(true);
 		setItemName("backpack");
-		setTabToDisplayOn(CreativeTabs.tabMisc);
+		setCreativeTab(CreativeTabs.tabMisc);
 	}
 
 	/**
@@ -172,9 +172,4 @@ public class BackpackItem extends Item {
 		// return index 0 of backpackNames array as fallback
 		return backpackNames[0];
 	}
-	
-	
-	//********** IInventory **********//
-	
-
 }

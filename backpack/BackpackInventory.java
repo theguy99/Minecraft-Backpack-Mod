@@ -220,7 +220,7 @@ public class BackpackInventory implements IInventory {
 	 */
 	private boolean isItemStackEqual(ItemStack itemStack) {
 		// check if ItemStack is a BackpackItem and normal properties are equal
-		if(itemStack.getItem() instanceof BackpackItem && itemStack.isStackEqual(originalIS)) {
+		if(itemStack.getItem() instanceof BackpackItem && itemStack.isItemEqual(originalIS)) {
 			// never opened backpacks have no NBT so make sure it is there
 			if(itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("Inventory")) {
 				// check if NBT data is equal too

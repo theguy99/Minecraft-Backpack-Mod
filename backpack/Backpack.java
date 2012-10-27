@@ -41,7 +41,7 @@ public class Backpack {
 		config.load();
 
 		// gets the item id from the configuration or creates it if it doesn't exists
-		backpackItemId = config.getOrCreateIntProperty("backpackItemId", Configuration.CATEGORY_ITEM, 18330);
+		backpackItemId = config.getItem("backpackItemId", 18330);
 
 		// save the file so it will be generated it it doesn't exists
 		config.save();
