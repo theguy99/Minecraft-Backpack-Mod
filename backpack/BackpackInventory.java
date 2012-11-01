@@ -1,26 +1,22 @@
 package backpack;
 
 import net.minecraft.src.EntityPlayer;
-import net.minecraft.src.IInventory;
+import net.minecraft.src.InventoryBasic;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.NBTTagList;
 
-public class BackpackInventory implements IInventory {
-	// number of slots 3 lines a 9 slots
-	private static final int slotsCount = 27;
-	// the content of the inventory
-	private ItemStack inventoryContents[];
-
-	// the default title of the backpack
+public class BackpackInventory extends InventoryBasic {
+	// the title of the backpack
 	private String inventoryTitle;
-
-	// an instance of the player to get the used item and for magic backpack
+	
+	// an instance of the player to get the inventory
 	private EntityPlayer playerEntity;
 	// the original ItemStack to compare with the player inventory
 	private ItemStack originalIS;
-	// the NBT data of the inventory
-	private NBTTagCompound data;
+	
+	// if class is reading from nbt tag
+	private boolean reading = false;
 
 	/**
 	 * Takes a player and an ItemStack.
@@ -31,7 +27,9 @@ public class BackpackInventory implements IInventory {
 	 *            The ItemStack which holds the backpack.
 	 */
 	public BackpackInventory(EntityPlayer player, ItemStack is) {
-		inventoryContents = new ItemStack[slotsCount];
+		// number of slots 3 lines a 9 slots
+		super("", 27);
+		
 		playerEntity = player;
 		originalIS = is;
 
@@ -39,110 +37,6 @@ public class BackpackInventory implements IInventory {
 		if(!hasInventory(is.getTagCompound())) {
 			createInventory();
 		}
-
-		// get NBTTagCompound from player or ItemStack
-		getNBT();
-
-		loadInventory();
-	}
-
-	/**
-	 * Returns how many slots the backpack has.
-	 * 
-	 * @return The number of slots in the backpack.
-	 */
-	@Override
-	public int getSizeInventory() {
-		return slotsCount;
-	}
-
-	/**
-	 * Returns the ItemStack in the given slot or null if the slot doesn't
-	 * exists.
-	 * 
-	 * @param position
-	 *            The position of the slot.
-	 * @return Returns an ItemStack or null if slot at position is empty or
-	 *         position is greater slotsCount.
-	 */
-	@Override
-	public ItemStack getStackInSlot(int position) {
-		if(position < slotsCount) {
-			return inventoryContents[position];
-		}
-		return null;
-	}
-
-	/**
-	 * Decreases the ItemStack at the given position.
-	 * 
-	 * @param position
-	 *            The position of the ItemStack.
-	 * @param decrease
-	 *            The number the ItemStack is reduced by.
-	 * @return The decreased ItemStack.
-	 */
-	@Override
-	public ItemStack decrStackSize(int position, int decrease) {
-		if(inventoryContents[position] != null) {
-			if(inventoryContents[position].stackSize <= decrease) {
-				ItemStack itemstack = inventoryContents[position];
-				inventoryContents[position] = null;
-				return itemstack;
-			}
-			ItemStack itemstack1 = inventoryContents[position].splitStack(decrease);
-			if(inventoryContents[position].stackSize == 0) {
-				inventoryContents[position] = null;
-			}
-			return itemstack1;
-		}
-		return null;
-	}
-
-	@Override
-	public ItemStack getStackInSlotOnClosing(int position) {
-		if(inventoryContents[position] != null) {
-			ItemStack itemstack = inventoryContents[position];
-			inventoryContents[position] = null;
-			return itemstack;
-		}
-		return null;
-	}
-
-	/**
-	 * Sets an ItemStack at the given position.
-	 * 
-	 * @param position
-	 *            The position where the ItemStack should be put in.
-	 * @param itemstack
-	 *            The ItemStack which should be put in the inventory.
-	 */
-	@Override
-	public void setInventorySlotContents(int position, ItemStack itemstack) {
-		inventoryContents[position] = itemstack;
-		if(itemstack != null && itemstack.stackSize > getInventoryStackLimit()) {
-			itemstack.stackSize = getInventoryStackLimit();
-		}
-	}
-
-	/**
-	 * Returns the title of the inventory.
-	 * 
-	 * @return The title.
-	 */
-	@Override
-	public String getInvName() {
-		return inventoryTitle;
-	}
-
-	/**
-	 * Returns the maximum stack size an ItemStack could have.
-	 * 
-	 * @return The maximum stack size.
-	 */
-	@Override
-	public int getInventoryStackLimit() {
-		return 64;
 	}
 
 	/**
@@ -150,17 +44,11 @@ public class BackpackInventory implements IInventory {
 	 */
 	@Override
 	public void onInventoryChanged() {
-		saveInventory();
-	}
-
-	/**
-	 * Returns if this inventory is usable by a player.
-	 * 
-	 * @return True if user can use it false otherwise.
-	 */
-	@Override
-	public boolean isUseableByPlayer(EntityPlayer player) {
-		return true;
+		super.onInventoryChanged();
+		// if reading from nbt don't write
+		if(!reading) {
+			saveInventory();
+		}
 	}
 
 	/**
@@ -181,14 +69,54 @@ public class BackpackInventory implements IInventory {
 		dropContainedBackpacks();
 		saveInventory();
 	}
+	
+	/**
+	 * Returns the name of the inventory.
+	 */
+	@Override
+	public String getInvName() {
+		return this.inventoryTitle;
+	}
 
 	// ***** custom methods which are not in IInventory *****
 	/**
-	 * Saves the NBTTagCompound of the user if the backpack is an ender backpack
-	 * or the NBTTagCompound of the currently used item in the data attribute.
+	 * Returns if an Inventory is saved in the NBT.
+	 * 
+	 * @param nbt
+	 *            The NBTTagCompound to check for an inventory.
+	 * @return True when the NBT is not null and the NBT has key "Inventory"
+	 *         otherwise false.
 	 */
-	private void getNBT() {
-		data = (NBTTagCompound) originalIS.getTagCompound();
+	private boolean hasInventory(NBTTagCompound nbt) {
+		return (nbt != null && (nbt.hasKey("Inventory")));
+	}
+
+	/**
+	 * Creates the Inventory Tag in the NBT with an empty inventory.
+	 */
+	private void createInventory() {
+		NBTTagCompound tag;
+		if(originalIS.hasTagCompound()) {
+			tag = originalIS.getTagCompound();
+		} else {
+			tag = new NBTTagCompound();
+		}
+		// new String so that a new String object is created
+		// so that title == title is false
+		// needed for two new created backpacks
+		setInvName(new String(originalIS.getItemName()));
+		writeToNBT(tag);
+		originalIS.setTagCompound(tag);
+	}
+
+	/**
+	 * Sets the name of the inventory.
+	 * 
+	 * @param name
+	 *            The new name.
+	 */
+	public void setInvName(String name) {
+		this.inventoryTitle = name;
 	}
 
 	/**
@@ -205,7 +133,7 @@ public class BackpackInventory implements IInventory {
 			// check if slot is not null and ItemStack is equal to original
 			if(itemStack != null && isItemStackEqual(itemStack)) {
 				// save new data in ItemStack
-				itemStack.setTagCompound(data);
+				itemStack.setTagCompound(originalIS.getTagCompound());
 				break;
 			}
 		}
@@ -238,26 +166,22 @@ public class BackpackInventory implements IInventory {
 	 * @return true if equal otherwise false.
 	 */
 	private boolean isTagCompoundEqual(ItemStack itemStack) {
-		NBTTagCompound itemStackTag = itemStack.getTagCompound().getCompoundTag("Inventory");
-		NBTTagCompound origItemStackTag = originalIS.getTagCompound().getCompoundTag("Inventory");
+		NBTTagCompound itemStackTag = itemStack.getTagCompound().getCompoundTag("display");
+		NBTTagCompound origItemStackTag = originalIS.getTagCompound().getCompoundTag("display");
 
 		// check if title is unequal
-		if(itemStackTag.getString("title") != origItemStackTag.getString("title")) {
-			return false;
+		if(itemStackTag.getString("Name") == origItemStackTag.getString("Name")) {
+			return true;
 		}
 		
-		// everything is equal
-		return true;
-	}
-
-	/**
-	 * Sets the name of the inventory.
-	 * 
-	 * @param name
-	 *            The new name.
-	 */
-	public void setInvName(String name) {
-		inventoryTitle = name;
+		// TODO: still there for compatibility
+		itemStackTag = itemStack.getTagCompound().getCompoundTag("Inventory");
+		if(itemStackTag.getString("title") == origItemStackTag.getString("Name")) {
+			return true;
+		}
+		
+		// title is unequal
+		return false;
 	}
 
 	/**
@@ -265,40 +189,15 @@ public class BackpackInventory implements IInventory {
 	 * the inventory from the NBT
 	 */
 	public void loadInventory() {
-		readFromTag(data.getCompoundTag("Inventory"));
+		readFromNBT(originalIS.getTagCompound());
 	}
 
 	/**
 	 * Saves the actual content of the inventory to the NBT.
 	 */
 	public void saveInventory() {
-		writeToTag(data.getCompoundTag("Inventory"));
+		writeToNBT(originalIS.getTagCompound());
 		setNBT();
-	}
-
-	/**
-	 * Creates the Inventory Tag in the NBT with an empty inventory.
-	 */
-	private void createInventory() {
-		// new String so that a new String object is created
-		// so that title == title is false
-		// needed for two new created backpacks
-		setInvName(new String(originalIS.getItemName()));
-		NBTTagCompound nbt = new NBTTagCompound();
-		nbt.setCompoundTag("Inventory", writeToTag(new NBTTagCompound()));
-		originalIS.setTagCompound(nbt);
-	}
-
-	/**
-	 * Returns if an Inventory is saved in the NBT.
-	 * 
-	 * @param nbt
-	 *            The NBTTagCompound to check for an inventory.
-	 * @return True when the NBT is not null and the NBT has key "Inventory"
-	 *         otherwise false.
-	 */
-	private boolean hasInventory(NBTTagCompound nbt) {
-		return (nbt != null && (nbt.hasKey("Inventory") || nbt.hasKey(playerEntity.getEntityName())));
 	}
 
 	/**
@@ -321,24 +220,28 @@ public class BackpackInventory implements IInventory {
 	 *            The NBT Node to write to.
 	 * @return The written NBT Node.
 	 */
-	private NBTTagCompound writeToTag(NBTTagCompound outerTag) {
+	private NBTTagCompound writeToNBT(NBTTagCompound outerTag) {
 		if(outerTag == null) {
 			return null;
 		}
-
-		outerTag.setString("title", getInvName());
+		// save name in display->Name
+		NBTTagCompound name = new NBTTagCompound();
+		name.setString("Name", getInvName());
+		outerTag.setCompoundTag("display", name);
 
 		NBTTagList itemList = new NBTTagList();
-		for(int i = 0; i < inventoryContents.length; i++) {
-			if(inventoryContents[i] != null) {
+		for(int i = 0; i < getSizeInventory(); i++) {
+			if(getStackInSlot(i) != null) {
 				NBTTagCompound slotEntry = new NBTTagCompound();
 				slotEntry.setByte("Slot", (byte) i);
-				inventoryContents[i].writeToNBT(slotEntry);
+				getStackInSlot(i).writeToNBT(slotEntry);
 				itemList.appendTag(slotEntry);
 			}
 		}
-
-		outerTag.setTag("Items", itemList);
+		// save content in Inventory->Items
+		NBTTagCompound inventory = new NBTTagCompound();
+		inventory.setTag("Items", itemList);
+		outerTag.setCompoundTag("Inventory", inventory);
 		return outerTag;
 	}
 
@@ -348,22 +251,28 @@ public class BackpackInventory implements IInventory {
 	 * @param outerTag
 	 *            The NBT Node to read from.
 	 */
-	private void readFromTag(NBTTagCompound outerTag) {
+	private void readFromNBT(NBTTagCompound outerTag) {
 		if(outerTag == null) {
 			return;
 		}
+		
+		reading = true;
+		// TODO for backwards compatibility
+		if(outerTag.getCompoundTag("Inventory").hasKey("title")) {
+			setInvName(outerTag.getCompoundTag("Inventory").getString("title"));
+		} else {
+			setInvName(outerTag.getCompoundTag("display").getString("Name"));
+		}
 
-		setInvName(outerTag.getString("title"));
-
-		NBTTagList itemList = outerTag.getTagList("Items");
-		inventoryContents = new ItemStack[getSizeInventory()];
+		NBTTagList itemList = outerTag.getCompoundTag("Inventory").getTagList("Items");
 		for(int i = 0; i < itemList.tagCount(); i++) {
 			NBTTagCompound slotEntry = (NBTTagCompound) itemList.tagAt(i);
 			int j = slotEntry.getByte("Slot") & 0xff;
 
 			if(j >= 0 && j < getSizeInventory()) {
-				inventoryContents[j] = ItemStack.loadItemStackFromNBT(slotEntry);
+				setInventorySlotContents(j, ItemStack.loadItemStackFromNBT(slotEntry));
 			}
 		}
+		reading = false;
 	}
 }

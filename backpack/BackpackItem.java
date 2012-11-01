@@ -93,8 +93,8 @@ public class BackpackItem extends Item {
 	@Override
 	public String getItemNameIS(ItemStack itemstack) {
 		if(itemstack.getTagCompound() != null) {
-			if(itemstack.getTagCompound().hasKey("Inventory")) {
-				return itemstack.getTagCompound().getCompoundTag("Inventory").getString("title");
+			if(itemstack.getTagCompound().hasKey("display")) {
+				return itemstack.getTagCompound().getCompoundTag("display").getString("Name");
 			}
 		}
 		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
