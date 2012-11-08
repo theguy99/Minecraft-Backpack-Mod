@@ -37,6 +37,8 @@ public class BackpackInventory extends InventoryBasic {
 		if(!hasInventory(is.getTagCompound())) {
 			createInventory();
 		}
+
+		loadInventory();
 	}
 
 	/**
