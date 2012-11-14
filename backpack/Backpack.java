@@ -18,7 +18,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
-@Mod(modid = "Backpack", name = "Backpack", version = "1.3.4")
+@Mod(modid = "Backpack", name = "Backpack", version = "1.4.4")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false, channels = {"BackpackRename"}, packetHandler = BackpackPacketHandler.class)
 public class Backpack {
 	// the id of the backpack items
@@ -128,5 +128,8 @@ public class Backpack {
 		
 		// enhance backpack to big backpack
 		GameRegistry.addRecipe(new RecipeEnhanceBackpack());
+		
+		// recolor backpack
+		GameRegistry.addRecipe(new RecipeRecolorBackpack());
 	}
 }
