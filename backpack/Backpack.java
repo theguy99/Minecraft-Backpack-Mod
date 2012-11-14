@@ -18,13 +18,17 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
-@Mod(modid = "Backpack", name = "Backpack", version = "1.2.4")
+@Mod(modid = "Backpack", name = "Backpack", version = "1.3.4")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false, channels = {"BackpackRename"}, packetHandler = BackpackPacketHandler.class)
 public class Backpack {
 	// the id of the backpack items
-	private static Property backpackItemId;
+	protected static Property backpackId;
+	protected static Property boundLeatherId;
+	protected static Property tannedLeatherId;
 	// an instance of the actual item
-	public static Item backpackItem;
+	public static Item backpack;
+	public static Item boundLeather;
+	public static Item tannedLeather;
 
 	@Instance("Backpack")
 	public static Backpack instance;
@@ -41,9 +45,11 @@ public class Backpack {
 		config.load();
 
 		// gets the item id from the configuration or creates it if it doesn't exists
-		backpackItemId = config.getItem("backpackItemId", 18330);
+		backpackId = config.getItem("backpackId", 18330);
+		boundLeatherId = config.getItem("boundLeatherId", 18331);
+		tannedLeatherId = config.getItem("tannedLeatherId", 18332);
 
-		// save the file so it will be generated it it doesn't exists
+		// save the file so it will be generated if it doesn't exists
 		config.save();
 	}
 
@@ -51,7 +57,9 @@ public class Backpack {
 	public void load(FMLInitializationEvent event) {
 		// create an instance of the backpack item with the id loaded from the
 		// configuration file
-		backpackItem = new BackpackItem(backpackItemId.getInt());
+		backpack = new ItemBackpack(backpackId.getInt());
+		boundLeather = new ItemLeather(boundLeatherId.getInt());
+		tannedLeather = new ItemLeather(tannedLeatherId.getInt());
 
 		// register recipes
 		registerRecipes();
@@ -69,28 +77,56 @@ public class Backpack {
 	 * adds all recipes to the game registry
 	 */
 	private void registerRecipes() {
-		ItemStack backpackStack = new ItemStack(backpackItem, 1, 0);
+		ItemStack backpackStack = new ItemStack(backpack, 1, 16);
+		ItemStack boundLeatherStack = new ItemStack(boundLeather);
 		ItemStack colorStack = new ItemStack(Item.dyePowder, 1, 0);
 
-		// Normal Backpack without dye
+		// normal backpack without dye
 		GameRegistry.addRecipe(backpackStack, "LLL", "L L", "LLL", 'L', Item.leather);
-		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[0]);
+		
+		// normal big backpack without dye
+		backpackStack = new ItemStack(backpack, 1, 48);
+		GameRegistry.addRecipe(backpackStack, "LLL", "L L", "LLL", 'L', tannedLeather);
 
-		// Backpacks from red to white
-		for(int i = 1; i < 16; i++) {
-			backpackStack = new ItemStack(backpackItem, 1, i);
+		// backpacks and big backpacks from black(0) to white(15)
+		for(int i = 0; i < 16; i++) {
+			// the dye
 			colorStack = new ItemStack(Item.dyePowder, 1, i);
+			
+			// backpacks
+			backpackStack = new ItemStack(backpack, 1, i);
 			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL", 
 					'L', Item.leather, 
 					'D', colorStack);
-			LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[i]);
+			LanguageRegistry.addName(backpackStack, ItemBackpack.backpackNames[i]);
+			
+			// big backpacks
+			backpackStack = new ItemStack(backpack, 1, i + 32);
+			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL", 
+					'L', tannedLeather, 
+					'D', colorStack);
+			LanguageRegistry.addName(backpackStack, "Big " + ItemBackpack.backpackNames[i]);
 		}
 
-		// Ender Backpack
-		backpackStack = new ItemStack(backpackItem, 1, BackpackItem.ENDERBACKPACK);
+		// ender Backpack
+		backpackStack = new ItemStack(backpack, 1, ItemBackpack.ENDERBACKPACK);
 		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
 				'L', Item.leather,
 				'D', Item.eyeOfEnder);
-		LanguageRegistry.addName(backpackStack, BackpackItem.backpackNames[16]);
+		LanguageRegistry.addName(backpackStack, ItemBackpack.backpackNames[16]);
+		
+		// bound leather
+		GameRegistry.addRecipe(boundLeatherStack, "SSS", "LSL", "SSS",
+				'S', Item.silk,
+				'L', Item.leather);
+		LanguageRegistry.addName(boundLeatherStack, "Bound Leather");
+		
+		// tanned leather
+		ItemStack tannedLeatherStack = new ItemStack(tannedLeather);
+		GameRegistry.addSmelting(boundLeather.shiftedIndex, tannedLeatherStack, 0.1f);
+		LanguageRegistry.addName(tannedLeatherStack, "Tanned Leather");
+		
+		// enhance backpack to big backpack
+		GameRegistry.addRecipe(new RecipeEnhanceBackpack());
 	}
 }

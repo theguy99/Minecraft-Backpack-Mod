@@ -9,13 +9,13 @@ import net.minecraft.src.NBTTagList;
 public class BackpackInventory extends InventoryBasic {
 	// the title of the backpack
 	private String inventoryTitle;
-	
+
 	// an instance of the player to get the inventory
 	private EntityPlayer playerEntity;
 	// the original ItemStack to compare with the player inventory
 	private ItemStack originalIS;
-	
-	// if class is reading from nbt tag
+
+	// if class is reading from NBT tag
 	private boolean reading = false;
 
 	/**
@@ -27,9 +27,8 @@ public class BackpackInventory extends InventoryBasic {
 	 *            The ItemStack which holds the backpack.
 	 */
 	public BackpackInventory(EntityPlayer player, ItemStack is) {
-		// number of slots 3 lines a 9 slots
-		super("", 27);
-		
+		super("", getInventorySize(is));
+
 		playerEntity = player;
 		originalIS = is;
 
@@ -47,7 +46,7 @@ public class BackpackInventory extends InventoryBasic {
 	@Override
 	public void onInventoryChanged() {
 		super.onInventoryChanged();
-		// if reading from nbt don't write
+		// if reading from NBT don't write
 		if(!reading) {
 			saveInventory();
 		}
@@ -71,7 +70,7 @@ public class BackpackInventory extends InventoryBasic {
 		dropContainedBackpacks();
 		saveInventory();
 	}
-	
+
 	/**
 	 * Returns the name of the inventory.
 	 */
@@ -81,6 +80,17 @@ public class BackpackInventory extends InventoryBasic {
 	}
 
 	// ***** custom methods which are not in IInventory *****
+	/**
+	 * Returns the size of the inventory based on the ItemStack.
+	 * 
+	 * @param is
+	 *            The ItemStack to check for the size.
+	 * @return The number of slots the inventory has.
+	 */
+	protected static int getInventorySize(ItemStack is) {
+		return (is.getItemDamage() > 17) ? 54 : 27;
+	}
+
 	/**
 	 * Returns if an Inventory is saved in the NBT.
 	 * 
@@ -150,7 +160,7 @@ public class BackpackInventory extends InventoryBasic {
 	 */
 	private boolean isItemStackEqual(ItemStack itemStack) {
 		// check if ItemStack is a BackpackItem and normal properties are equal
-		if(itemStack.getItem() instanceof BackpackItem && itemStack.isItemEqual(originalIS)) {
+		if(itemStack.getItem() instanceof ItemBackpack && itemStack.isItemEqual(originalIS)) {
 			// never opened backpacks have no NBT so make sure it is there
 			if(itemStack.hasTagCompound() && itemStack.getTagCompound().hasKey("Inventory")) {
 				// check if NBT data is equal too
@@ -175,13 +185,13 @@ public class BackpackInventory extends InventoryBasic {
 		if(itemStackTag.getString("Name") == origItemStackTag.getString("Name")) {
 			return true;
 		}
-		
+
 		// TODO: still there for compatibility
 		itemStackTag = itemStack.getTagCompound().getCompoundTag("Inventory");
 		if(itemStackTag.getString("title") == origItemStackTag.getString("Name")) {
 			return true;
 		}
-		
+
 		// title is unequal
 		return false;
 	}
@@ -208,7 +218,7 @@ public class BackpackInventory extends InventoryBasic {
 	private void dropContainedBackpacks() {
 		for(int i = 0; i < getSizeInventory(); i++) {
 			ItemStack item = getStackInSlot(i);
-			if(item != null && item.getItem() instanceof BackpackItem) {
+			if(item != null && item.getItem() instanceof ItemBackpack) {
 				playerEntity.dropPlayerItem(getStackInSlot(i));
 				setInventorySlotContents(i, null);
 			}
@@ -257,7 +267,7 @@ public class BackpackInventory extends InventoryBasic {
 		if(outerTag == null) {
 			return;
 		}
-		
+
 		reading = true;
 		// TODO for backwards compatibility
 		if(outerTag.getCompoundTag("Inventory").hasKey("title")) {

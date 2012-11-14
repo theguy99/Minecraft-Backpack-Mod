@@ -17,7 +17,7 @@ public class BackpackGuiHandler implements IGuiHandler {
 	@Override
 	public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
 		// if user holds an item and this item is an backpack return GUI
-		if(player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() instanceof BackpackItem) {
+		if(player.getCurrentEquippedItem() != null && player.getCurrentEquippedItem().getItem() instanceof ItemBackpack) {
 			return new BackpackGui(player);
 		}
 		return null;

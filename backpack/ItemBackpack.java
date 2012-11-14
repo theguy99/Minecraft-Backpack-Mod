@@ -10,13 +10,13 @@ import net.minecraft.src.ItemStack;
 import net.minecraft.src.World;
 import cpw.mods.fml.common.FMLCommonHandler;
 
-public class BackpackItem extends Item {
+public class ItemBackpack extends Item {
 	// the names of all backpacks
 	static final String[] backpackNames = {
-			"Backpack", "Red Backpack", "Green Backpack", "Brown Backpack", "Blue Backpack",
+			"Black Backpack", "Red Backpack", "Green Backpack", "Brown Backpack", "Blue Backpack",
 			"Purple Backpack", "Cyan Backpack", "Light Gray Backpack", "Gray Backpack",
 			"Pink Backpack", "Lime Green Backpack", "Yellow Backpack", "Light Blue Backpack",
-			"Magenta Backpack", "Orange Backpack", "White Backpack", "Ender Backpack"
+			"Magenta Backpack", "Orange Backpack", "White Backpack", "Backpack", "Ender Backpack"
 	};
 
 	// the damage of an magic backpack
@@ -28,7 +28,7 @@ public class BackpackItem extends Item {
 	 * @param id
 	 *            The item id.
 	 */
-	protected BackpackItem(int id) {
+	protected ItemBackpack(int id) {
 		super(id);
 		setIconIndex(0);
 		setMaxStackSize(1);
@@ -56,11 +56,14 @@ public class BackpackItem extends Item {
 	 */
 	@Override
 	public int getIconFromDamage(int damage) {
-		if(damage >= 0 && damage < 16) {
+		if(damage >= 0 && damage < 17) {
+			return damage;
+		}
+		if(damage >= 32 && damage < 49) {
 			return damage;
 		}
 		if(damage == ENDERBACKPACK) {
-			return 16;
+			return 17;
 		}
 		return 0;
     }
@@ -68,19 +71,24 @@ public class BackpackItem extends Item {
 	/**
 	 * Returns the sub items.
 	 * 
-	 * @param unknown
-	 *            unknown
+	 * @param itemId
+	 *            the id of the item
 	 * @param tab
 	 *            A creative tab.
 	 * @param A
 	 *            List which stores the sub items.
 	 */
 	@Override
-	public void getSubItems(int unknown, CreativeTabs tab, List subItems) {
-		for(int i = 0; i < 16; i++) {
-			subItems.add(new ItemStack(this, 1, i));
+	public void getSubItems(int itemId, CreativeTabs tab, List subItems) {
+		for(int i = 0; i < 17; i++) {
+			subItems.add(new ItemStack(itemId, 1, i));
 		}
-		subItems.add(new ItemStack(this, 1, ENDERBACKPACK));
+		for(int i = 32; i < 49; i++) {
+			subItems.add(new ItemStack(itemId, 1, i));
+		}
+		if(itemId == Backpack.backpack.shiftedIndex) {
+			subItems.add(new ItemStack(itemId, 1, ENDERBACKPACK));
+		}
 	}
 
 	/**
@@ -97,15 +105,17 @@ public class BackpackItem extends Item {
 				return itemstack.getTagCompound().getCompoundTag("display").getString("Name");
 			}
 		}
-		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
-			// return
-			// StringTranslate.getInstance().translateNamedKey(backpackNames[itemstack.getItemDamage()]);
+		int dmg = itemstack.getItemDamage();
+		if(dmg >= 0 && dmg < 17) {
 			return backpackNames[itemstack.getItemDamage()];
 		}
-		if(itemstack.getItemDamage() == ENDERBACKPACK) {
-			return backpackNames[16];
+		if(dmg >= 32 && dmg < 49) {
+			return "Big " + backpackNames[itemstack.getItemDamage() - 32];
 		}
-		return backpackNames[0];
+		if(itemstack.getItemDamage() == ENDERBACKPACK) {
+			return backpackNames[17];
+		}
+		return backpackNames[16];
 	}
 
 	/**
@@ -125,7 +135,7 @@ public class BackpackItem extends Item {
 		// if world.isRemote than we are on the client side
 		if(world.isRemote) {
 			// display rename GUI if player is sneaking
-			if(player.isSneaking() && is.getItemDamage() != BackpackItem.ENDERBACKPACK) {
+			if(player.isSneaking() && is.getItemDamage() != ItemBackpack.ENDERBACKPACK) {
 				FMLCommonHandler.instance().showGuiScreen(new BackpackGui(player));
 			}
 			return is;
@@ -135,7 +145,7 @@ public class BackpackItem extends Item {
 		if(!player.isSneaking()) {
 			// get the inventory
 			IInventory inv;
-			if(is.getItemDamage() == BackpackItem.ENDERBACKPACK) {
+			if(is.getItemDamage() == ItemBackpack.ENDERBACKPACK) {
 				inv = player.getInventoryEnderChest();
 			} else {
 				inv = new BackpackInventory(player, is);
@@ -161,15 +171,19 @@ public class BackpackItem extends Item {
 			}
 		}
 		// else if damage is between 0 and 15 return name from backpackNames array
-		if(itemstack.getItemDamage() >= 0 && itemstack.getItemDamage() < 16) {
+		int dmg = itemstack.getItemDamage();
+		if(dmg >= 0 && dmg < 17) {
 			return backpackNames[itemstack.getItemDamage()];
+		}
+		if(dmg >= 32 && dmg < 49) {
+			return "Big " + backpackNames[itemstack.getItemDamage() - 32];
 		}
 		// else if damage is equal to ENDERBACKPACK then return backpackNames index 16
 		if(itemstack.getItemDamage() == ENDERBACKPACK) {
-			return backpackNames[16];
+			return backpackNames[17];
 		}
 
 		// return index 0 of backpackNames array as fallback
-		return backpackNames[0];
+		return backpackNames[16];
 	}
 }
