@@ -88,7 +88,7 @@ public class BackpackInventory extends InventoryBasic {
 	 * @return The number of slots the inventory has.
 	 */
 	protected static int getInventorySize(ItemStack is) {
-		return (is.getItemDamage() > 17) ? 54 : 27;
+		return 9 * ((is.getItemDamage() > 17) ? Backpack.sizeL : Backpack.sizeM);
 	}
 
 	/**

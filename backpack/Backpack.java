@@ -1,5 +1,6 @@
 package backpack;
 
+import net.minecraft.src.Block;
 import net.minecraft.src.Item;
 import net.minecraft.src.ItemStack;
 import net.minecraftforge.common.Configuration;
@@ -18,7 +19,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
-@Mod(modid = "Backpack", name = "Backpack", version = "1.4.4")
+@Mod(modid = "Backpack", name = "Backpack", version = "1.5.4")
 @NetworkMod(clientSideRequired = true, serverSideRequired = false, channels = {"BackpackRename"}, packetHandler = BackpackPacketHandler.class)
 public class Backpack {
 	// the id of the backpack items
@@ -29,6 +30,10 @@ public class Backpack {
 	public static Item backpack;
 	public static Item boundLeather;
 	public static Item tannedLeather;
+	
+	protected Property enderRecipe;
+	protected static Integer sizeM;
+	protected static Integer sizeL;
 
 	@Instance("Backpack")
 	public static Backpack instance;
@@ -48,6 +53,11 @@ public class Backpack {
 		backpackId = config.getItem("backpackId", 18330);
 		boundLeatherId = config.getItem("boundLeatherId", 18331);
 		tannedLeatherId = config.getItem("tannedLeatherId", 18332);
+		
+		config.addCustomCategoryComment(Configuration.CATEGORY_GENERAL, getCommentText());
+		enderRecipe = config.get(Configuration.CATEGORY_GENERAL, "enderRecipe", 0);
+		sizeM = config.get(Configuration.CATEGORY_GENERAL, "backpackSizeM", 3).getInt();
+		sizeL = config.get(Configuration.CATEGORY_GENERAL, "backpackSizeL", 6).getInt();
 
 		// save the file so it will be generated if it doesn't exists
 		config.save();
@@ -109,10 +119,17 @@ public class Backpack {
 		}
 
 		// ender Backpack
-		backpackStack = new ItemStack(backpack, 1, ItemBackpack.ENDERBACKPACK);
-		GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
-				'L', Item.leather,
-				'D', Item.eyeOfEnder);
+		if(enderRecipe.getInt() == 0) {
+			backpackStack = new ItemStack(backpack, 1, ItemBackpack.ENDERBACKPACK);
+			GameRegistry.addRecipe(backpackStack, "LLL", "LEL", "LLL",
+					'L', Item.leather,
+					'E', Block.enderChest);
+		} else {
+			backpackStack = new ItemStack(backpack, 1, ItemBackpack.ENDERBACKPACK);
+			GameRegistry.addRecipe(backpackStack, "LLL", "LDL", "LLL",
+					'L', Item.leather,
+					'D', Item.eyeOfEnder);
+		}
 		LanguageRegistry.addName(backpackStack, ItemBackpack.backpackNames[16]);
 		
 		// bound leather
@@ -131,5 +148,15 @@ public class Backpack {
 		
 		// recolor backpack
 		GameRegistry.addRecipe(new RecipeRecolorBackpack());
+	}
+	
+	private String getCommentText() {
+		return "enderRecipe:\n" +
+				"0 enderChest\n" +
+				"1 eye of the ender\n" +
+				"\n" +
+				"backpackSizeM / backpackSizeL:\n" +
+				"number of rows (9 slots)\n" +
+				"valid: integers 1-6";
 	}
 }
